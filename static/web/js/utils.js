@@ -1,4 +1,4 @@
-function htmlEncode(value){ return String(value).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); };
+function htmlEncode(value){ return String(value).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
 
 $.fn.loadImages = function(options){
 	options = $.extend({}, {attr:'src'}, options);
@@ -8,7 +8,7 @@ $.fn.loadImages = function(options){
 			var nimg = img.clone();
 			nimg.one('load', function(){img.replaceWith(nimg);});
 			nimg.removeAttr(options.attr).removeAttr('data-'+options.attr).attr('src', url);
-		};
+		}
 	});
 };
 

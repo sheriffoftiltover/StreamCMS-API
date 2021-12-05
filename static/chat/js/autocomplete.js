@@ -85,8 +85,8 @@
 				var nick = this.shards[i][j]
 				if (nick.weight > 2 && nick.weight < fiveminutesago)
 					nick.weight = 1;
-			};
-		};
+			}
+		}
 	};
 
 	$.fn.mAutoComplete = function(options){
@@ -98,7 +98,7 @@
 				triggerKeys: [kCodes.TAB]
 			}, options);
 		
-			var results 		= new Array(),
+			var results 		= [],
 				resultIndex 	= -1,
 				searchWord		= '',
 				originalTxt 	= '',

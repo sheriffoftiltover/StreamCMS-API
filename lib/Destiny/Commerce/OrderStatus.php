@@ -1,11 +1,13 @@
 <?php
+
 namespace Destiny\Commerce;
 
-abstract class OrderStatus {
-    
-    const _NEW = 'New';
-    const ERROR = 'Error';
-    const COMPLETED = 'Completed';
-    const PENDING = 'Pending';
+abstract class OrderStatus
+{
+
+    public const _NEW = 'New';
+    public const ERROR = 'Error';
+    public const COMPLETED = 'Completed';
+    public const PENDING = 'Pending';
 
 }

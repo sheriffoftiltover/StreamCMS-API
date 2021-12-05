@@ -32,7 +32,7 @@ $word = $words [array_rand ( $words, 1 )];
 			</div>
 		</div>
 	</section>
-	
+
 	<?php include'foot.php'?>
 
 </body>

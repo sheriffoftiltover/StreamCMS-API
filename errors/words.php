@@ -1,5 +1,5 @@
 <?php
-return array (
+return [
 	'Bezinga',
 	'Bepzinky',
 	'Beezinga',
@@ -14,5 +14,5 @@ return array (
 	'Babaloo',
 	'Baritone',
 	'Zapalazonga',
-	'Barnziglimo' 
-);
+	'Barnziglimo'
+];

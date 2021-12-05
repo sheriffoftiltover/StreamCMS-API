@@ -1,16 +1,19 @@
 <?php
+
 namespace Destiny\Tasks;
 
-use Psr\Log\LoggerInterface;
-use Destiny\Common\Authentication\RememberMeService;
 use Destiny\Commerce\SubscriptionsService;
+use Destiny\Common\Authentication\RememberMeService;
+use Psr\Log\LoggerInterface;
 
-class SubscriptionExpire {
+class SubscriptionExpire
+{
 
-    public function execute(LoggerInterface $log) {
-        RememberMeService::instance ()->clearExpiredRememberMe ();
-        $expiredSubscriptionCount = SubscriptionsService::instance ()->expiredSubscriptions ();
-        $log->debug ( sprintf ( 'Expired (%s)', $expiredSubscriptionCount ) );
+    public function execute(LoggerInterface $log)
+    {
+        RememberMeService::instance()->clearExpiredRememberMe();
+        $expiredSubscriptionCount = SubscriptionsService::instance()->expiredSubscriptions();
+        $log->debug(sprintf('Expired (%s)', $expiredSubscriptionCount));
     }
 
 }

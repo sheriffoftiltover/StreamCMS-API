@@ -1,42 +1,47 @@
 <?php
+
 namespace Destiny\Common\Routing;
 
-use Destiny\Common\Routing\Route;
 use Destiny\Common\Request;
 
-class Router {
+class Router
+{
 
     /**
      * Setup the router
      * @param array $routes
      */
-    public function __construct(array $routes = null) {
-        if (! empty ( $routes )) {
-            $this->setRoutes ( $routes );
+    public function __construct(array $routes = null)
+    {
+        if (!empty ($routes)) {
+            $this->setRoutes($routes);
         }
-    }
-
-    /**
-     * Get the route collection
-     * @return array<Route>
-     */
-    public function getRoutes() {
-        return $this->routes;
     }
 
     /**
      * Set the route collection
      * @param array<Route> $routes
      */
-    public function setRoutes(array $routes) {
+    public function setRoutes(array $routes)
+    {
         $this->routes = $routes;
     }
-    
+
+    /**
+     * Get the route collection
+     * @return array<Route>
+     */
+    public function getRoutes()
+    {
+        return $this->routes;
+    }
+
     /**
      * Add a route
      * @param Route $route
      */
-    public function addRoute(Route $route){
+    public function addRoute(Route $route)
+    {
         $this->routes[] = $route;
     }
 
@@ -45,11 +50,12 @@ class Router {
      *
      * @return Route
      */
-    public function findRoute(Request $request) {
-        $path = $request->path ();
-        $method = $request->method ();
-        for($i = 0; $i < count ( $this->routes ); ++ $i) {
-            if ($this->routes [$i]->testPath ( $path, $method )) {
+    public function findRoute(Request $request)
+    {
+        $path = $request->path();
+        $method = $request->method();
+        for ($i = 0; $i < count($this->routes); ++$i) {
+            if ($this->routes [$i]->testPath($path, $method)) {
                 return $this->routes [$i];
             }
         }
@@ -57,4 +63,5 @@ class Router {
     }
 
 }
+
 ?>

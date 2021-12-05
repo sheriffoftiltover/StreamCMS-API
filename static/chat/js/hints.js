@@ -44,7 +44,7 @@
 			if(chat.loaded && e.keyCode != 116 /* F5 */){
 				chat.input.unbind('.hintpopup');
 				this.invoke();
-			};
+			}
 		}, this));
 	};
 	hintPopup.prototype.invoke = function(chat){
@@ -56,7 +56,7 @@
 				return false;
 			this.show();
 			return true;
-		};
+		}
 		return false;
 	};
 	hintPopup.prototype.enable = function(enabled){

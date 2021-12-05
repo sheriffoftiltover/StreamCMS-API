@@ -1,23 +1,26 @@
 <?php
+
 namespace Destiny\Common;
 
-class ViewModel {
-    
+class ViewModel
+{
+
     /**
      * List of properties
      *
      * @var array
      */
-    protected $vars = array ();
+    protected $vars = [];
 
     /**
      * Set the variables via the constructor
      *
      * @param array $params
      */
-    public function __construct(array $params = null) {
-        if (! empty ( $params )) {
-            foreach ( $params as $name => $value ) {
+    public function __construct(array $params = null)
+    {
+        if (!empty ($params)) {
+            foreach ($params as $name => $value) {
                 $this->vars [$name] = $value;
             }
         }
@@ -28,19 +31,9 @@ class ViewModel {
      *
      * @return array
      */
-    public function getData() {
+    public function getData()
+    {
         return $this->vars;
-    }
-
-    /**
-     * Set a variable value
-     *
-     * @param string $name
-     * @param mix $value
-     */
-    public function __set($name, $value) {
-        $this->vars [$name] = $value;
-        return $value;
     }
 
     /**
@@ -49,8 +42,21 @@ class ViewModel {
      * @param string $name
      * @param mix $value
      */
-    public function __get($name) {
-        return (isset ( $this->vars [$name] )) ? $this->vars [$name] : null;
+    public function __get($name)
+    {
+        return (isset ($this->vars [$name])) ? $this->vars [$name] : null;
+    }
+
+    /**
+     * Set a variable value
+     *
+     * @param string $name
+     * @param mix $value
+     */
+    public function __set($name, $value)
+    {
+        $this->vars [$name] = $value;
+        return $value;
     }
 
     /**
@@ -58,9 +64,11 @@ class ViewModel {
      *
      * @param string $name
      */
-    public function __isset($name) {
-        return isset ( $this->vars [$name] );
+    public function __isset($name)
+    {
+        return isset ($this->vars [$name]);
     }
 
 }
+
 ?>

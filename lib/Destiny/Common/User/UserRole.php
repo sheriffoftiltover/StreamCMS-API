@@ -1,10 +1,12 @@
 <?php
+
 namespace Destiny\Common\User;
 
-abstract class UserRole {
-    
-    const USER = 'USER';
-    const ADMIN = 'ADMIN';
-    const SUBSCRIBER = 'SUBSCRIBER';
+abstract class UserRole
+{
+
+    public const USER = 'USER';
+    public const ADMIN = 'ADMIN';
+    public const SUBSCRIBER = 'SUBSCRIBER';
 
 }

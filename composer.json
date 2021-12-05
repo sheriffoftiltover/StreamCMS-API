@@ -5,7 +5,7 @@
 	"version": "1.4.8",
 	"minimum-stability": "dev",
 	"require": {
-		"php" : ">=5.3.0",
+		"php" : ">=8.0",
 		"ext-curl" : "*",
 		"ext-json" : "*",
 		"ext-openssl" : "*",
@@ -13,7 +13,9 @@
 		"monolog/monolog" : "1.5.0",
 		"doctrine/dbal": "2.4.*@dev",
 		"themattharris/tmhoauth": "dev-master",
-		"adoy/oauth2": "dev-master"
+		"adoy/oauth2": "dev-master",
+		"ext-pdo": "*",
+		"ext-redis": "*"
 	},
 	"autoload": {
 		"psr-0": {

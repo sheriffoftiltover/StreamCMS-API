@@ -1,10 +1,12 @@
 <?php
+
 namespace Destiny\Commerce;
 
-abstract class PaymentProfileStatus {
+abstract class PaymentProfileStatus
+{
 
-    const ERROR = 'Error';
-    const ACTIVEPROFILE = 'ActiveProfile';
-    const CANCELLEDPROFILE = 'CancelledProfile';
+    public const ERROR = 'Error';
+    public const ACTIVEPROFILE = 'ActiveProfile';
+    public const CANCELLEDPROFILE = 'CancelledProfile';
 
 }

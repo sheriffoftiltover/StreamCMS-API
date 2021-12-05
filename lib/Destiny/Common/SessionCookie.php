@@ -1,8 +1,11 @@
-<?php 
+<?php
+
 namespace Destiny\Common;
 
 use Destiny\Common\Utils\Options;
-class SessionCookie {
+
+class SessionCookie
+{
 
     /**
      * Cookie name
@@ -37,42 +40,31 @@ class SessionCookie {
      *
      * @param array $params
      */
-    public function __construct(array $params = null) {
-        if (! empty ( $params )) {
-            Options::setOptions ( $this, $params );
+    public function __construct(array $params = null)
+    {
+        if (!empty ($params)) {
+            Options::setOptions($this, $params);
         }
     }
 
-    public function getName() {
+    public function getName()
+    {
         return $this->name;
     }
 
-    public function getLife() {
-        return $this->life;
-    }
-
-    public function getPath() {
-        return $this->path;
-    }
-
-    public function getDomain() {
-        return $this->domain;
-    }
-
-    public function setName($name) {
+    public function setName($name)
+    {
         $this->name = $name;
     }
 
-    public function setLife($life) {
+    public function getLife()
+    {
+        return $this->life;
+    }
+
+    public function setLife($life)
+    {
         $this->life = $life;
-    }
-
-    public function setPath($path) {
-        $this->path = $path;
-    }
-
-    public function setDomain($domain) {
-        $this->domain = $domain;
     }
 
     /**
@@ -80,8 +72,9 @@ class SessionCookie {
      *
      * @return string NULL
      */
-    public function getCookie() {
-        if (isset ( $_COOKIE [$this->name] )) {
+    public function getCookie()
+    {
+        if (isset ($_COOKIE [$this->name])) {
             return $_COOKIE [$this->name];
         }
         return null;
@@ -90,12 +83,34 @@ class SessionCookie {
     /**
      * Clears the session cookie
      */
-    public function clearCookie() {
-        if (isset ( $_COOKIE [$this->name] )) {
-            unset ( $_COOKIE [$this->name] );
+    public function clearCookie()
+    {
+        if (isset ($_COOKIE [$this->name])) {
+            unset ($_COOKIE [$this->name]);
         }
-        setcookie ( $this->name, '', time () - 3600, $this->getPath (), $this->getDomain () );
+        setcookie($this->name, '', time() - 3600, $this->getPath(), $this->getDomain());
+    }
+
+    public function getPath()
+    {
+        return $this->path;
+    }
+
+    public function setPath($path)
+    {
+        $this->path = $path;
+    }
+
+    public function getDomain()
+    {
+        return $this->domain;
+    }
+
+    public function setDomain($domain)
+    {
+        $this->domain = $domain;
     }
 
 }
+
 ?>

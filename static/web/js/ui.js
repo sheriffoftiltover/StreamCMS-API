@@ -37,7 +37,7 @@ $(function(){
             var entries = $('#stream-lastfm .entries:first').empty();
             if(data != null && typeof data['recenttracks'] == 'object' && data.recenttracks.track.length > 0){
                 for(var i in data.recenttracks.track){
-                    if(i == 3){ break; };
+                    if(i == 3){ break; }
                     var track = data.recenttracks.track[i];
                     var entry = $(
                             '<div class="media">'+ 
@@ -56,9 +56,9 @@ $(function(){
                             '</div>'
                     );
                     entries.append(entry);
-                };
+                }
                 entries.loadImages();
-            };
+            }
         }
     });
     
@@ -73,7 +73,7 @@ $(function(){
             if(textStatus == 'notmodified') return;
             var entries = $('#stream-twitter .entries:first').empty();
             for(var i in tweets){
-                if(i == 3){ break; };
+                if(i == 3){ break; }
                 entries.append(
                     '<div class="media">'+ 
                         '<div class="media-body">'+ 
@@ -84,7 +84,7 @@ $(function(){
                         '</div>'+ 
                     '</div>'
                 );
-            };
+            }
             entries.loadImages();
         }
     });
@@ -112,9 +112,9 @@ $(function(){
                         '</li>'
                     );
                     ui.find('.thumbnail').tooltip({placement:'bottom'});
-                };
+                }
                 ui.loadImages();
-            };
+            }
         }
     });
     
@@ -142,10 +142,10 @@ $(function(){
                             '</div>'+
                         '</li>'
                     );
-                };
+                }
                 ui.loadImages();
                 ui.find('[data-toggle="tooltip"]').tooltip();
-            };
+            }
         }
     });
     
@@ -495,7 +495,7 @@ $(function(){
             
             elem[fullFn]();
             break;
-        };
+        }
     };
     
     // Toggles player fullscreen using the global fullscreen flag
@@ -599,7 +599,7 @@ $(function(){
             usrSelectBtn.attr('disabled', true);
         }else{
             usrSelectBtn.attr('disabled', false);
-        };
+        }
         usrSearch.find('label.error').addClass('hidden');
     });
 
@@ -629,7 +629,7 @@ $(function(){
             usrInput.val('');
             giftMsgInput.val('');
             usrSearch.find('label.error').addClass('hidden');
-        };
+        }
     });
 
     $('#cancelGiftSubscription').on('click', function(){

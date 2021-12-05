@@ -1,8 +1,10 @@
 <?php
+
 namespace Destiny\Common;
 
-abstract class Service {
-    
+abstract class Service
+{
+
     /**
      * @var Service
      */
@@ -11,7 +13,8 @@ abstract class Service {
     /**
      * @return $instance
      */
-    public static function instance() {
+    public static function instance()
+    {
         if (static::$instance === null) {
             static::$instance = new static ();
         }

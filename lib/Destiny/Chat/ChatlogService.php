@@ -1,12 +1,17 @@
 <?php
+
 namespace Destiny\Chat;
 
-use Destiny\Common\Service;
-use Destiny\Common\Application;
+use DateTime;
 use Destiny\Commerce\SubscriptionStatus;
+use Destiny\Common\Application;
+use Destiny\Common\Service;
+use Doctrine\DBAL\Types\DateTimeType;
+use PDO;
 
-class ChatlogService extends Service {
-    
+class ChatlogService extends Service
+{
+
     /**
      * Singleton
      *
@@ -19,8 +24,9 @@ class ChatlogService extends Service {
      *
      * @return ChatlogService
      */
-    public static function instance() {
-        return parent::instance ();
+    public static function instance()
+    {
+        return parent::instance();
     }
 
     /**
@@ -28,9 +34,10 @@ class ChatlogService extends Service {
      *
      * @return array
      */
-    public function getChatLog($limit) {
-        $conn = Application::instance ()->getConnection ();
-        $stmt = $conn->prepare ( '
+    public function getChatLog($limit)
+    {
+        $conn = Application::instance()->getConnection();
+        $stmt = $conn->prepare('
             SELECT
                 u.username,
                 u2.username AS target,
@@ -66,25 +73,26 @@ class ChatlogService extends Service {
                 l.event NOT IN("JOIN", "QUIT")
             ORDER BY l.id DESC
             LIMIT 0,:limit
-        ' );
-        
-        $stmt->bindValue ( 'limit', $limit, \PDO::PARAM_INT );
-        $stmt->bindValue ( 'status', SubscriptionStatus::ACTIVE, \PDO::PARAM_INT );
-        $stmt->execute ();
-        return $stmt->fetchAll ();
+        ');
+
+        $stmt->bindValue('limit', $limit, PDO::PARAM_INT);
+        $stmt->bindValue('status', SubscriptionStatus::ACTIVE, PDO::PARAM_INT);
+        $stmt->execute();
+        return $stmt->fetchAll();
     }
 
     /**
      * Get the last X number of messages from a specific user starting at a specific date (going backwards)
      *
-     * @param int $userId           
-     * @param DateTime $startRange          
-     * @param int $limit            
-     * @param int $start            
+     * @param int $userId
+     * @param DateTime $startRange
+     * @param int $limit
+     * @param int $start
      */
-    public function getChatLogBanContext($userId, \DateTime $startRange, $limit = 10, $start = 0) {
-        $conn = Application::instance ()->getConnection ();
-        $stmt = $conn->prepare ( '
+    public function getChatLogBanContext($userId, DateTime $startRange, $limit = 10, $start = 0)
+    {
+        $conn = Application::instance()->getConnection();
+        $stmt = $conn->prepare('
             SELECT
                 u.username,
                 u2.username AS target,
@@ -100,24 +108,25 @@ class ChatlogService extends Service {
                 AND l.timestamp <= :startRange
             ORDER BY l.id DESC
             LIMIT :start,:limit
-        ' );
-        $stmt->bindValue ( 'startRange', $startRange, \Doctrine\DBAL\Types\DateTimeType::DATETIME );
-        $stmt->bindValue ( 'start', $start, \PDO::PARAM_INT );
-        $stmt->bindValue ( 'limit', $limit, \PDO::PARAM_INT );
-        $stmt->execute ();
-        return $stmt->fetchAll ();
+        ');
+        $stmt->bindValue('startRange', $startRange, DateTimeType::DATETIME);
+        $stmt->bindValue('start', $start, PDO::PARAM_INT);
+        $stmt->bindValue('limit', $limit, PDO::PARAM_INT);
+        $stmt->execute();
+        return $stmt->fetchAll();
     }
-    
+
     /**
      * Get the latest broadcasts
-     * 
+     *
      * @param DateTime $startRange
      * @param number $limit
      * @param number $start
      */
-    public function getBroadcasts(\DateTime $startRange, $limit=1, $start=0){
-        $conn = Application::instance ()->getConnection ();
-        $stmt = $conn->prepare ( '
+    public function getBroadcasts(DateTime $startRange, $limit = 1, $start = 0)
+    {
+        $conn = Application::instance()->getConnection();
+        $stmt = $conn->prepare('
             SELECT
                 u.username,
                 u2.username AS target,
@@ -133,12 +142,12 @@ class ChatlogService extends Service {
                 AND l.timestamp >= :startRange
             ORDER BY l.id DESC
             LIMIT :start,:limit
-        ' );
-        $stmt->bindValue ( 'startRange', $startRange, \Doctrine\DBAL\Types\DateTimeType::DATETIME );
-        $stmt->bindValue ( 'start', $start, \PDO::PARAM_INT );
-        $stmt->bindValue ( 'limit', $limit, \PDO::PARAM_INT );
-        $stmt->execute ();
-        return $stmt->fetchAll ();
+        ');
+        $stmt->bindValue('startRange', $startRange, DateTimeType::DATETIME);
+        $stmt->bindValue('start', $start, PDO::PARAM_INT);
+        $stmt->bindValue('limit', $limit, PDO::PARAM_INT);
+        $stmt->execute();
+        return $stmt->fetchAll();
     }
 
 }

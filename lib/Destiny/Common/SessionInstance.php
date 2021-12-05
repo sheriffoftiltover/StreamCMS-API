@@ -1,31 +1,33 @@
 <?php
+
 namespace Destiny\Common;
 
 use Destiny\Common\Utils\Options;
 
-class SessionInstance {
-    
+class SessionInstance
+{
+
     /**
      * Wether or not the session has been started
      *
-     * @var boolean
+     * @var bool
      */
     protected $started = false;
-    
+
     /**
      * The unique session Id
      *
      * @var string
      */
     protected $sessionId = '';
-    
+
     /**
      * The session cookie
      *
      * @var SessionCookie
      */
     protected $sessionCookie = null;
-    
+
     /**
      * The session authentication
      *
@@ -38,54 +40,52 @@ class SessionInstance {
      *
      * @param array $params
      */
-    public function __construct(array $params = null) {
-        if (! empty ( $params )) {
-            Options::setOptions ( $this, $params );
+    public function __construct(array $params = null)
+    {
+        if (!empty ($params)) {
+            Options::setOptions($this, $params);
         }
-    }
-
-    /**
-     * Start the session, return true if the session was started otherwise false
-     *
-     * @todo this does a mix of things, need to clean-up
-     * @return boolean
-     */
-    public function start() {
-        $this->started = session_start ();
-        $this->setSessionId ( session_id () );
-        $credentials = $this->getCredentials ();
-        $credentials->setData ( $this->getData () );
-        return $this->started;
     }
 
     /**
      * Regenerates the session id
      *
-     * @param boolean $delete Delete the old associated session file
-     * @return boolean
+     * @param bool $delete Delete the old associated session file
+     * @return bool
      */
-    public function renew($delete = true) {
-        if ($this->isStarted () || $this->start ()) {
-            session_regenerate_id ( $delete );
-            $this->setSessionId ( session_id () );
+    public function renew($delete = true)
+    {
+        if ($this->isStarted() || $this->start()) {
+            session_regenerate_id($delete);
+            $this->setSessionId(session_id());
             return true;
         }
         return false;
     }
 
     /**
-     * Deletes the session and recreates the session Id
+     * Returns true if the session has been stared, false otherwise
      *
-     * @return void
+     * @return bool
      */
-    public function destroy() {
-        $cookie = $this->getSessionCookie ();
-        $cookie->clearCookie ();
-        if ($this->isStarted ()) {
-            session_destroy ();
-            $_SESSION = array ();
-            session_regenerate_id ( false );
-        }
+    public function isStarted()
+    {
+        return $this->started;
+    }
+
+    /**
+     * Start the session, return true if the session was started otherwise false
+     *
+     * @return bool
+     * @todo this does a mix of things, need to clean-up
+     */
+    public function start()
+    {
+        $this->started = session_start();
+        $this->setSessionId(session_id());
+        $credentials = $this->getCredentials();
+        $credentials->setData($this->getData());
+        return $this->started;
     }
 
     /**
@@ -93,7 +93,8 @@ class SessionInstance {
      *
      * @return SessionCredentials
      */
-    public function getCredentials() {
+    public function getCredentials()
+    {
         return $this->credentials;
     }
 
@@ -102,8 +103,35 @@ class SessionInstance {
      *
      * @param unknown_type $credentials
      */
-    public function setCredentials(SessionCredentials $credentials) {
+    public function setCredentials(SessionCredentials $credentials)
+    {
         $this->credentials = $credentials;
+    }
+
+    /**
+     * Return all the session data
+     *
+     * @return array
+     */
+    public function getData()
+    {
+        return $_SESSION;
+    }
+
+    /**
+     * Deletes the session and recreates the session Id
+     *
+     * @return void
+     */
+    public function destroy()
+    {
+        $cookie = $this->getSessionCookie();
+        $cookie->clearCookie();
+        if ($this->isStarted()) {
+            session_destroy();
+            $_SESSION = [];
+            session_regenerate_id(false);
+        }
     }
 
     /**
@@ -111,7 +139,8 @@ class SessionInstance {
      *
      * @return \Destiny\SessionCookie
      */
-    public function getSessionCookie() {
+    public function getSessionCookie()
+    {
         return $this->sessionCookie;
     }
 
@@ -120,10 +149,11 @@ class SessionInstance {
      *
      * @param unknown_type $sessionCookie
      */
-    public function setSessionCookie(SessionCookie $sessionCookie) {
+    public function setSessionCookie(SessionCookie $sessionCookie)
+    {
         $this->sessionCookie = $sessionCookie;
-        session_set_cookie_params ( $sessionCookie->getLife (), $sessionCookie->getPath (), $sessionCookie->getDomain () );
-        session_name ( $sessionCookie->getName () );
+        session_set_cookie_params($sessionCookie->getLife(), $sessionCookie->getPath(), $sessionCookie->getDomain());
+        session_name($sessionCookie->getName());
     }
 
     /**
@@ -131,7 +161,8 @@ class SessionInstance {
      *
      * @return string
      */
-    public function getSessionId() {
+    public function getSessionId()
+    {
         return $this->sessionId;
     }
 
@@ -140,17 +171,9 @@ class SessionInstance {
      *
      * @param string $sessionId
      */
-    public function setSessionId($sessionId) {
+    public function setSessionId($sessionId)
+    {
         $this->sessionId = $sessionId;
-    }
-
-    /**
-     * Return all the session data
-     *
-     * @return array
-     */
-    public function getData() {
-        return $_SESSION;
     }
 
     /**
@@ -159,9 +182,10 @@ class SessionInstance {
      * @param string $name
      * @return bool
      */
-    public function isEmpty($name) {
-        $value = (isset ( $_SESSION [$name] )) ? $_SESSION [$name] : null;
-        return empty ( $value );
+    public function isEmpty($name)
+    {
+        $value = (isset ($_SESSION [$name])) ? $_SESSION [$name] : null;
+        return empty ($value);
     }
 
     /**
@@ -170,8 +194,9 @@ class SessionInstance {
      * @param string $name
      * @return mix
      */
-    public function get($name) {
-        return (isset ( $_SESSION [$name] )) ? $_SESSION [$name] : null;
+    public function get($name)
+    {
+        return (isset ($_SESSION [$name])) ? $_SESSION [$name] : null;
     }
 
     /**
@@ -180,25 +205,17 @@ class SessionInstance {
      * @param string $name
      * @param mix $value
      */
-    public function set($name, $value = null) {
+    public function set($name, $value = null)
+    {
         if ($value === null) {
-            if (isset ( $_SESSION [$name] )) {
+            if (isset ($_SESSION [$name])) {
                 $value = $_SESSION [$name];
-                unset ( $_SESSION [$name] );
+                unset ($_SESSION [$name]);
             }
         } else {
             $_SESSION [$name] = $value;
         }
         return $value;
-    }
-
-    /**
-     * Returns true if the session has been stared, false otherwise
-     *
-     * @return boolean
-     */
-    public function isStarted() {
-        return $this->started;
     }
 
 }

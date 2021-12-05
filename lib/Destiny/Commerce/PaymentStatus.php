@@ -1,12 +1,14 @@
 <?php
+
 namespace Destiny\Commerce;
 
-abstract class PaymentStatus {
-    
-    const _NEW = 'New';
-    const ACTIVE = 'Active';
-    const PENDING = 'Pending';
-    const COMPLETED = 'Completed';
-    const ERROR = 'Error';
+abstract class PaymentStatus
+{
+
+    public const _NEW = 'New';
+    public const ACTIVE = 'Active';
+    public const PENDING = 'Pending';
+    public const COMPLETED = 'Completed';
+    public const ERROR = 'Error';
 
 }

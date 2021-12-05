@@ -89,7 +89,7 @@
             this.setupNotifications();
             if (this.engine.user.username) {
                 this.highlightregex.user = new RegExp("\\b"+this.engine.user.username+"\\b", "i");
-            };
+            }
             
             // Auto complete
             this.autoCompletePlugin = this.input.mAutoComplete({
@@ -100,7 +100,7 @@
             for (var i = this.emoticons.length - 1; i >= 0; i--) {
                 // let the emotes have more weight than someone who never spoke
                 this.autoCompletePlugin.addData(this.emoticons[i], 2);
-            };
+            }
             
             // Chat settings
             this.chatsettings = this.ui.find('#chat-settings:first').eq(0);
@@ -128,7 +128,7 @@
                     data[i] = data[i].trim();
                     if (!data[i])
                         data.splice(i, 1)
-                };
+                }
                 chat.saveChatOption('customhighlight', data );
                 chat.loadCustomHighlights();
             });
@@ -227,7 +227,7 @@
                     users.sort()
                     for (var i = 0; i < users.length; i++) {
                         elem.append(elems[users[i]]);
-                    };
+                    }
                 };
 
                 lists.empty();
@@ -353,7 +353,7 @@
                     case 'hideflairicons':
                         self.ui.toggleClass('chat-icons', (!value));
                         break;
-                };
+                }
             });
         },
         
@@ -374,10 +374,10 @@
                     
                 }
                 this.put(new ChatUIMessage('<hr/>'));
-            };
+            }
             this.scrollPlugin.updateAndScroll(true);
             this.backlogLoading = false;
-            return;
+
         },
         
         loadBroadcasts: function(){
@@ -388,7 +388,7 @@
                 }
             }
             this.backlogLoading = false;
-            return;
+
         },
         
         getLineCount: function(){
@@ -456,7 +456,7 @@
                 this.onSend(str, this.input[0]);
                 this.insertInputHistory(str);
                 this.currenthistoryline = -1;
-            };
+            }
             str = null;
             return this;
         },
@@ -615,7 +615,7 @@
             
             for (var i = highlights.length - 1; i >= 0; i--) {
                 highlights[i] = highlights[i].replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&")
-            };
+            }
             this.highlightregex.custom = new RegExp("\\b(?:"+highlights.join("|")+")\\b", "i")
         },
         
@@ -678,7 +678,7 @@
             
             if(prevbroadcasts.length >= this.maxbroadcasts){
                 prevbroadcasts[prevbroadcasts.length-1].remove();
-            };
+            }
             
             var broadcastui  = broadcasttpl.clone().removeClass('template');
             broadcastui.find('.message').html(encoded);

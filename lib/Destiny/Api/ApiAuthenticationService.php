@@ -1,19 +1,22 @@
 <?php
+
 namespace Destiny\Api;
 
 use Destiny\Common\Application;
-use Destiny\Common\Utils\Date;
 use Destiny\Common\Service;
+use Destiny\Common\Utils\Date;
+use PDO;
 
-class ApiAuthenticationService extends Service {
-    
+class ApiAuthenticationService extends Service
+{
+
     /**
      * Singleton
      *
      * @var ApiAuthenticationService
      */
     protected static $instance = null;
-    
+
     /**
      * Salting for the auth token
      *
@@ -26,8 +29,9 @@ class ApiAuthenticationService extends Service {
      *
      * @return ApiAuthenticationService
      */
-    public static function instance() {
-        return parent::instance ();
+    public static function instance()
+    {
+        return parent::instance();
     }
 
     /**
@@ -35,12 +39,28 @@ class ApiAuthenticationService extends Service {
      *
      * @return string
      */
-    public function createAuthToken($userId) {
-        $token = md5 ( $this->authTokenSalt . microtime ( true ) . $userId );
-        if ($this->getAuthTokenExists ( $token )) {
-            $token = $this->createAuthToken ( $userId );
+    public function createAuthToken($userId)
+    {
+        $token = md5($this->authTokenSalt . microtime(true) . $userId);
+        if ($this->getAuthTokenExists($token)) {
+            $token = $this->createAuthToken($userId);
         }
         return $token;
+    }
+
+    /**
+     * Check if an auth token exists
+     *
+     * @param string $authToken
+     * @return bool
+     */
+    public function getAuthTokenExists($authToken)
+    {
+        $conn = Application::instance()->getConnection();
+        $stmt = $conn->prepare('SELECT COUNT(*) FROM dfl_users_auth_token WHERE authToken = :authToken LIMIT 0,1');
+        $stmt->bindValue('authToken', $authToken, PDO::PARAM_INT);
+        $stmt->execute();
+        return ($stmt->fetchColumn() == 1) ? true : false;
     }
 
     /**
@@ -49,13 +69,10 @@ class ApiAuthenticationService extends Service {
      * @param int $userId
      * @param string $authToken
      */
-    public function addAuthToken($userId, $authToken) {
-        $conn = Application::instance ()->getConnection ();
-        $conn->insert ( 'dfl_users_auth_token', array (
-            'userId' => $userId,
-            'authToken' => $authToken,
-            'createdDate' => Date::getDateTime ( 'NOW' )->format ( 'Y-m-d H:i:s' ) 
-        ) );
+    public function addAuthToken($userId, $authToken)
+    {
+        $conn = Application::instance()->getConnection();
+        $conn->insert('dfl_users_auth_token', ['userId' => $userId, 'authToken' => $authToken, 'createdDate' => Date::getDateTime('NOW')->format('Y-m-d H:i:s')]);
     }
 
     /**
@@ -63,11 +80,10 @@ class ApiAuthenticationService extends Service {
      *
      * @param int $id
      */
-    public function removeAuthToken($id) {
-        $conn = Application::instance ()->getConnection ();
-        $conn->delete ( 'dfl_users_auth_token', array (
-            'authTokenId' => $id 
-        ) );
+    public function removeAuthToken($id)
+    {
+        $conn = Application::instance()->getConnection();
+        $conn->delete('dfl_users_auth_token', ['authTokenId' => $id]);
     }
 
     /**
@@ -77,18 +93,19 @@ class ApiAuthenticationService extends Service {
      * @param int $limit
      * @param int $start
      */
-    public function getAuthTokensByUserId($userId, $limit = 5, $start = 0) {
-        $conn = Application::instance ()->getConnection ();
-        $stmt = $conn->prepare ( '
+    public function getAuthTokensByUserId($userId, $limit = 5, $start = 0)
+    {
+        $conn = Application::instance()->getConnection();
+        $stmt = $conn->prepare('
             SELECT * FROM dfl_users_auth_token WHERE userId = :userId
             ORDER BY createdDate DESC
             LIMIT :start,:limit
-        ' );
-        $stmt->bindValue ( 'userId', $userId, \PDO::PARAM_INT );
-        $stmt->bindValue ( 'start', $start, \PDO::PARAM_INT );
-        $stmt->bindValue ( 'limit', $limit, \PDO::PARAM_INT );
-        $stmt->execute ();
-        return $stmt->fetchAll ();
+        ');
+        $stmt->bindValue('userId', $userId, PDO::PARAM_INT);
+        $stmt->bindValue('start', $start, PDO::PARAM_INT);
+        $stmt->bindValue('limit', $limit, PDO::PARAM_INT);
+        $stmt->execute();
+        return $stmt->fetchAll();
     }
 
     /**
@@ -97,26 +114,13 @@ class ApiAuthenticationService extends Service {
      * @param string $authToken
      * @return array<array>
      */
-    public function getAuthToken($authToken) {
-        $conn = Application::instance ()->getConnection ();
-        $stmt = $conn->prepare ( 'SELECT * FROM dfl_users_auth_token WHERE authToken = :authToken LIMIT 0,1' );
-        $stmt->bindValue ( 'authToken', $authToken, \PDO::PARAM_INT );
-        $stmt->execute ();
-        return $stmt->fetch ();
-    }
-
-    /**
-     * Check if an auth token exists
-     *
-     * @param string $authToken
-     * @return boolean
-     */
-    public function getAuthTokenExists($authToken) {
-        $conn = Application::instance ()->getConnection ();
-        $stmt = $conn->prepare ( 'SELECT COUNT(*) FROM dfl_users_auth_token WHERE authToken = :authToken LIMIT 0,1' );
-        $stmt->bindValue ( 'authToken', $authToken, \PDO::PARAM_INT );
-        $stmt->execute ();
-        return ($stmt->fetchColumn () == 1) ? true : false;
+    public function getAuthToken($authToken)
+    {
+        $conn = Application::instance()->getConnection();
+        $stmt = $conn->prepare('SELECT * FROM dfl_users_auth_token WHERE authToken = :authToken LIMIT 0,1');
+        $stmt->bindValue('authToken', $authToken, PDO::PARAM_INT);
+        $stmt->execute();
+        return $stmt->fetch();
     }
 
     /**
@@ -126,18 +130,19 @@ class ApiAuthenticationService extends Service {
      * @param int $limit
      * @param int $start
      */
-    public function getAuthSessionsByUserId($userId, $limit = 5, $start = 0) {
-        $conn = Application::instance ()->getConnection ();
-        $stmt = $conn->prepare ( '
+    public function getAuthSessionsByUserId($userId, $limit = 5, $start = 0)
+    {
+        $conn = Application::instance()->getConnection();
+        $stmt = $conn->prepare('
             SELECT * FROM dfl_users_auth WHERE userId = :userId
             ORDER BY createdDate DESC
             LIMIT :start,:limit
-        ' );
-        $stmt->bindValue ( 'userId', $userId, \PDO::PARAM_INT );
-        $stmt->bindValue ( 'start', $start, \PDO::PARAM_INT );
-        $stmt->bindValue ( 'limit', $limit, \PDO::PARAM_INT );
-        $stmt->execute ();
-        return $stmt->fetchAll ();
+        ');
+        $stmt->bindValue('userId', $userId, PDO::PARAM_INT);
+        $stmt->bindValue('start', $start, PDO::PARAM_INT);
+        $stmt->bindValue('limit', $limit, PDO::PARAM_INT);
+        $stmt->execute();
+        return $stmt->fetchAll();
     }
 
 }

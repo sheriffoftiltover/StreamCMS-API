@@ -1,121 +1,121 @@
 <?php
+
 namespace Destiny\Common;
 
-use Destiny\Common\Config;
-use Destiny\Common\MimeType;
 use Destiny\Common\Utils\Http;
 use Destiny\Common\Utils\Options;
-use Destiny\Common\Application;
 use Psr\Log\LoggerInterface;
 
 /**
  * Used simply to retrieve HTTP data via a curl URL request
  */
-class CurlBrowser {
-    
+class CurlBrowser
+{
+
     /**
      * The url to call
      *
      * @var string
      */
     public $url = '';
-    
+
     /**
      * The response
      *
      * @var mix | string
      */
     public $response = null;
-    
+
     /**
      * Maximum time to wait for response to complete
      *
      * @var int
      */
     public $timeout = 0;
-    
+
     /**
      * Maximum time to wait for a valid connection
      *
      * @var int
      */
     public $connectTimeout = 0;
-    
+
     /**
      * The data content type
      *
      * @var string
      */
     public $contentType = MimeType::TEXT;
-    
+
     /**
      * OnFetch method
      *
      * @var function
      */
     public $onfetch = null;
-    
+
     /**
      * BeforeFetch method
      *
      * @var function
      */
     public $beforefetch = null;
-    
+
     /**
      * Argument to be passed into feth method
      *
      * @var mix
      */
     public $params = null;
-    
+
     /**
      * The reponse code
      *
      * @var int
      */
     public $responseCode = Http::STATUS_OK;
-    
+
     /**
      * Data to post
      *
      * @var array
      */
     public $postData = null;
-    
+
     /**
      *
      * @var LoggerInterface
      */
     protected $logger = null;
-    
+
     /**
      * The CURL request headers
      *
      * @var array
      */
-    protected $headers = array ();
-    
+    protected $headers = [];
+
     /**
      * The CURL verify peer flag
      *
-     * @var boolean
+     * @var bool
      */
     protected $verifyPeer = true;
 
     /**
      * Constructor
      *
-     * @param array $args           
+     * @param array $args
      */
-    public function __construct(array $args = null) {
-        if(isset(Config::$a ['curl']))
-            Options::setOptions ( $this, Config::$a ['curl'] );
-        Options::setOptions ( $this, $args );
-        if (empty ( $this->logger ))
-            $this->setLogger ( Application::instance ()->getLogger () );
-        if (! empty ( $this->url ))
-            $this->response = $this->browse ();
+    public function __construct(array $args = null)
+    {
+        if (isset(Config::$a ['curl']))
+            Options::setOptions($this, Config::$a ['curl']);
+        Options::setOptions($this, $args);
+        if (empty ($this->logger))
+            $this->setLogger(Application::instance()->getLogger());
+        if (!empty ($this->url))
+            $this->response = $this->browse();
     }
 
     /**
@@ -123,13 +123,14 @@ class CurlBrowser {
      *
      * @return array
      */
-    protected function browse() {
-        $response = $this->fetch ( $this->getUrl () );
+    protected function browse()
+    {
+        $response = $this->fetch($this->getUrl());
         if ($this->responseCode == Http::STATUS_OK) {
-            $response = $this->stringToDataType ( $response );
-            $onFetch = $this->getOnfetch ();
-            if (! empty ( $onFetch ) && is_callable ( $onFetch )) {
-                $response = call_user_func ( $onFetch, $response, $this->getParams () );
+            $response = $this->stringToDataType($response);
+            $onFetch = $this->getOnfetch();
+            if (!empty ($onFetch) && is_callable($onFetch)) {
+                $response = call_user_func($onFetch, $response, $this->getParams());
             }
         }
         return $response;
@@ -141,27 +142,88 @@ class CurlBrowser {
      * @param string $url
      * @return mixed
      */
-    protected function fetch($url) {
-        $curl = curl_init ();
-        curl_setopt ( $curl, CURLOPT_URL, $url );
-        curl_setopt ( $curl, CURLOPT_RETURNTRANSFER, true );
-        curl_setopt ( $curl, CURLOPT_SSL_VERIFYPEER, $this->getVerifyPeer () );
-        curl_setopt ( $curl, CURLOPT_TIMEOUT, $this->getTimeout () );
-        curl_setopt ( $curl, CURLOPT_CONNECTTIMEOUT, $this->getConnectTimeout () );
-        $postData = $this->getPostData ();
-        if (! empty ( $postData )) {
-            curl_setopt ( $curl, CURLOPT_POST, true );
-            curl_setopt ( $curl, CURLOPT_POSTFIELDS, $postData );
+    protected function fetch($url)
+    {
+        $curl = curl_init();
+        curl_setopt($curl, CURLOPT_URL, $url);
+        curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, $this->getVerifyPeer());
+        curl_setopt($curl, CURLOPT_TIMEOUT, $this->getTimeout());
+        curl_setopt($curl, CURLOPT_CONNECTTIMEOUT, $this->getConnectTimeout());
+        $postData = $this->getPostData();
+        if (!empty ($postData)) {
+            curl_setopt($curl, CURLOPT_POST, true);
+            curl_setopt($curl, CURLOPT_POSTFIELDS, $postData);
         }
-        $headers = $this->getHeaders ();
-        if (! empty ( $headers )) {
-            curl_setopt ( $curl, CURLOPT_HTTPHEADER, $headers );
+        $headers = $this->getHeaders();
+        if (!empty ($headers)) {
+            curl_setopt($curl, CURLOPT_HTTPHEADER, $headers);
         }
-        $data = curl_exec ( $curl );
-        $info = curl_getinfo ( $curl );
-        $this->logger->debug ( sprintf ( 'Curl.HTTP(%s): %s %s', $info ['http_code'], $url, json_encode ( $postData ) ) );
-        $this->responseCode = intval ( $info ['http_code'] );
+        $data = curl_exec($curl);
+        $info = curl_getinfo($curl);
+        $this->logger->debug(sprintf('Curl.HTTP(%s): %s %s', $info ['http_code'], $url, json_encode($postData)));
+        $this->responseCode = intval($info ['http_code']);
         return $data;
+    }
+
+    public function getVerifyPeer()
+    {
+        return $this->verifyPeer;
+    }
+
+    public function setVerifyPeer($verifyPeer)
+    {
+        $this->verifyPeer = $verifyPeer;
+    }
+
+    public function getTimeout()
+    {
+        return $this->timeout;
+    }
+
+    public function setTimeout($timeout)
+    {
+        $this->timeout = $timeout;
+    }
+
+    public function getConnectTimeout()
+    {
+        return $this->connectTimeout;
+    }
+
+    public function setConnectTimeout($connectTimeout)
+    {
+        $this->connectTimeout = $connectTimeout;
+    }
+
+    public function getPostData()
+    {
+        return $this->postData;
+    }
+
+    public function setPostData(array $postData)
+    {
+        $this->postData = $postData;
+    }
+
+    public function getHeaders()
+    {
+        return $this->headers;
+    }
+
+    public function setHeaders($headers)
+    {
+        $this->headers = $headers;
+    }
+
+    public function getUrl()
+    {
+        return $this->url;
+    }
+
+    public function setUrl($url)
+    {
+        $this->url = $url;
     }
 
     /**
@@ -170,15 +232,41 @@ class CurlBrowser {
      * @param string $str
      * @return mixed
      */
-    private function stringToDataType($str) {
-        if (is_string ( $str )) {
+    private function stringToDataType($str)
+    {
+        if (is_string($str)) {
             switch ($this->contentType) {
                 case MimeType::JSON :
-                    return json_decode ( $str, true );
+                    return json_decode($str, true);
                     break;
             }
         }
         return $str;
+    }
+
+    public function getOnfetch()
+    {
+        return $this->onfetch;
+    }
+
+    public function setOnfetch($onfetch)
+    {
+        $this->onfetch = $onfetch;
+    }
+
+    public function getParams()
+    {
+        return $this->params;
+    }
+
+    public function setParams($params)
+    {
+        $this->params = $params;
+    }
+
+    public function __toString()
+    {
+        return $this->dataTypeToString($this->getResponse());
     }
 
     /**
@@ -187,127 +275,71 @@ class CurlBrowser {
      * @param array $data
      * @return string
      */
-    private function dataTypeToString($data) {
-        if (is_array ( $data ) || is_object ( $data )) {
+    private function dataTypeToString($data)
+    {
+        if (is_array($data) || is_object($data)) {
             switch ($this->contentType) {
                 case MimeType::JSON :
-                    return json_encode ( $data );
+                    return json_encode($data);
                     break;
             }
         }
         return "$data";
     }
 
-    public function __toString() {
-        return $this->dataTypeToString ( $this->getResponse () );
-    }
-
-    public function getResponse() {
+    public function getResponse()
+    {
         return $this->response;
     }
 
-    public function getUrl() {
-        return $this->url;
-    }
-
-    public function setUrl($url) {
-        $this->url = $url;
-    }
-
-    public function getTimeout() {
-        return $this->timeout;
-    }
-
-    public function setTimeout($timeout) {
-        $this->timeout = $timeout;
-    }
-
-    public function getConnectTimeout() {
-        return $this->connectTimeout;
-    }
-
-    public function setConnectTimeout($connectTimeout) {
-        $this->connectTimeout = $connectTimeout;
-    }
-
-    public function getContentType() {
-        return $this->contentType;
-    }
-
-    public function setContentType($contentType) {
-        $this->contentType = $contentType;
-    }
-
-    public function getOnfetch() {
-        return $this->onfetch;
-    }
-
-    public function setOnfetch($onfetch) {
-        $this->onfetch = $onfetch;
-    }
-
-    public function getBeforefetch() {
-        return $this->beforefetch;
-    }
-
-    public function setBeforefetch($beforefetch) {
-        $this->beforefetch = $beforefetch;
-    }
-
-    public function getParams() {
-        return $this->params;
-    }
-
-    public function setParams($params) {
-        $this->params = $params;
-    }
-
-    public function getVerifyPeer() {
-        return $this->verifyPeer;
-    }
-
-    public function setVerifyPeer($verifyPeer) {
-        $this->verifyPeer = $verifyPeer;
-    }
-
-    public function getHeaders() {
-        return $this->headers;
-    }
-
-    public function setHeaders($headers) {
-        $this->headers = $headers;
-    }
-
-    public function getResponseCode() {
-        return $this->responseCode;
-    }
-
-    public function setResponseCode($responseCode) {
-        $this->responseCode = $responseCode;
-    }
-
-    public function getPostData() {
-        return $this->postData;
-    }
-
-    public function setPostData(array $postData) {
-        $this->postData = $postData;
-    }
-
-    public function getLogger() {
-        return $this->logger;
-    }
-
-    public function setLogger(LoggerInterface $logger) {
-        $this->logger = $logger;
-    }
-
-    public function setResponse($response) {
+    public function setResponse($response)
+    {
         $this->response = $response;
     }
 
-    public function isPost() {
-        return (empty ( $this->postData )) ? false : true;
+    public function getContentType()
+    {
+        return $this->contentType;
+    }
+
+    public function setContentType($contentType)
+    {
+        $this->contentType = $contentType;
+    }
+
+    public function getBeforefetch()
+    {
+        return $this->beforefetch;
+    }
+
+    public function setBeforefetch($beforefetch)
+    {
+        $this->beforefetch = $beforefetch;
+    }
+
+    public function getResponseCode()
+    {
+        return $this->responseCode;
+    }
+
+    public function setResponseCode($responseCode)
+    {
+        $this->responseCode = $responseCode;
+    }
+
+    public function getLogger()
+    {
+        return $this->logger;
+    }
+
+    public function setLogger(LoggerInterface $logger)
+    {
+        $this->logger = $logger;
+    }
+
+    public function isPost()
+    {
+        return (empty ($this->postData)) ? false : true;
     }
 
 }

@@ -45,7 +45,7 @@ function chat(element, user, options) {
 	this.previousemote      = null;
 	this.originemote        = null;
 	return this;
-};
+}
 chat.prototype.start = function(){
 	if (window.MozWebSocket)
 		window.WebSocket = MozWebSocket;
@@ -172,7 +172,7 @@ chat.prototype.onNAMES = function(data) {
 		var u = data.users[i];
 		this.users[u.nick] = new ChatUser(u);
 		this.gui.autoCompletePlugin.addData(u.nick, 1);
-	};
+	}
 	
 	this.gui.trigger('names', data);
 	return new ChatStatusMessage("Connected. Server connections: " + data.connectioncount);
@@ -578,7 +578,7 @@ chat.prototype.handleCommand = function(str) {
 			this.emit(command.toUpperCase(), payload);
 			break;
 			
-	};
+	}
 };
 chat.prototype.parseTimeInterval = function(str) {
 	var nanoseconds = 0,

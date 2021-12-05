@@ -1,14 +1,16 @@
 <?php
+
 namespace Destiny\Common\Annotation;
 
 /**
  * This annotation relies on the Route annotation being present
- * 
+ *
  * @Annotation
  * @Target({"CLASS","METHOD"})
  */
-class Feature {
-    
+class Feature
+{
+
     /**
      * The features list
      * @var array<string>
@@ -19,9 +21,11 @@ class Feature {
      * A list of allowed features
      * @param array $params
      */
-    public function __construct(array $params) {
+    public function __construct(array $params)
+    {
         $this->features = $params ['value'];
     }
 
 }
+
 ?>
