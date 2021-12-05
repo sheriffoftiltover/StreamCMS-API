@@ -1,0 +1,14 @@
+*.sublime-*
+config/config.local.php
+/.settings
+/.externalToolBuilders
+/.project
+/.buildpath
+
+/config/cert_key.pem
+/config/sdk_config.ini
+
+/composer.lock
+/deployment.properties
+/node_modules
+/scripts/redis/*.hash

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="WebServers">
+    <option name="servers">
+      <webServer id="424eb922-f951-4be9-8ceb-a642a70258d6" name="HW_Dedi" url="https://testingsh.it">
+        <fileTransfer accessType="SFTP" host="198.84.77.251" port="22" sshConfigId="568b4595-9a9b-4211-bc81-ac8a4bcf06e3" sshConfig="root@198.84.77.251:22 key" keyPair="true">
+          <advancedOptions>
+            <advancedOptions dataProtectionLevel="Private" keepAliveTimeout="0" passiveMode="true" shareSSLContext="true" />
+          </advancedOptions>
+        </fileTransfer>
+      </webServer>
+    </option>
+  </component>
+</project>
