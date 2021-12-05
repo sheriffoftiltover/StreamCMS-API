@@ -1,4 +1,4 @@
-<?
+<?php
 
 use Destiny\Common\Utils\Date;
 use Destiny\Common\Utils\Tpl;
@@ -21,14 +21,14 @@ if (!empty ($model->articles)) :
                                     <a href="<?= $article['permalink'] ?>"><?= $article['title'] ?></a>
                                 </div>
                                 <div>
-                                    <? foreach ($article['categories'] as $categories): ?>
+                                    <?php foreach ($article['categories'] as $categories): ?>
                                         <span><small>Posted in</small> <?= Tpl::out($categories['title']) ?></span>
-                                    <? endforeach; ?>
+                                    <?php endforeach; ?>
                                 </div>
                                 <?= Tpl::moment(Date::getDateTime($article['date']), Date::FORMAT) ?>
                             </div>
                         </div>
-                    <? endfor; ?>
+                    <?php endfor; ?>
                 </div>
             </div>
 
@@ -43,17 +43,17 @@ if (!empty ($model->articles)) :
                                     <a href="<?= $article['permalink'] ?>"><?= $article['title'] ?></a>
                                 </div>
                                 <div>
-                                    <? foreach ($article['categories'] as $categories): ?>
+                                    <?php foreach ($article['categories'] as $categories): ?>
                                         <span><small>Posted in</small> <?= Tpl::out($categories['title']) ?></span>
-                                    <? endforeach; ?>
+                                    <?php endforeach; ?>
                                 </div>
                                 <?= Tpl::moment(Date::getDateTime($article['date']), Date::FORMAT) ?>
                             </div>
                         </div>
-                    <? endfor; ?>
+                    <?php endfor; ?>
                 </div>
             </div>
 
         </div>
     </section>
-<? endif; ?>
+<?php endif; ?>

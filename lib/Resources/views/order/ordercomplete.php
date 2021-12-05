@@ -1,4 +1,4 @@
-<?
+<?php
 namespace Destiny;
 
 use Destiny\Common\Config;

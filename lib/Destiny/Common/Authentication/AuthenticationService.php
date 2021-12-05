@@ -75,7 +75,7 @@ class AuthenticationService extends Service
         $front = substr($normalizeduname, 0, 2);
         foreach (Config::$a ['chat'] ['customemotes'] as $emote) {
             $normalizedemote = strtolower($emote);
-            if (strpos($normalizeduname, $normalizedemote) === 0)
+            if (str_starts_with($normalizeduname, $normalizedemote))
                 throw new Exception ('Username too similar to an emote, try changing the first characters');
 
             if ($emote == 'LUL')
@@ -112,12 +112,8 @@ class AuthenticationService extends Service
         if (!filter_var($email, FILTER_VALIDATE_EMAIL))
             throw new Exception ('A valid email is required');
 
-        if (!empty ($user)) {
-            if (UserService::instance()->getIsEmailTaken($email, $user ['userId']))
-                throw new Exception ('The email you asked for is already being used');
-        } else {
-            if (UserService::instance()->getIsEmailTaken($email))
-                throw new Exception ('The email you asked for is already being used');
+        if ($user !== [] && UserService::instance()->getIsEmailTaken($email, $user['userId']) || UserService::instance()->getIsEmailTaken($email)) {
+            throw new Exception ('The email you asked for is already being used');
         }
     }
 
@@ -298,7 +294,10 @@ class AuthenticationService extends Service
         // Update the auth profile for this provider
         $authProfile = $userService->getUserAuthProfile($user ['userId'], $authCreds->getAuthProvider());
         if (!empty ($authProfile)) {
-            $userService->updateUserAuthProfile($user ['userId'], $authCreds->getAuthProvider(), ['authCode' => $authCreds->getAuthCode(), 'authDetail' => $authCreds->getAuthDetail()]);
+            $userService->updateUserAuthProfile($user ['userId'], $authCreds->getAuthProvider(), [
+                'authCode' => $authCreds->getAuthCode(),
+                'authDetail' => $authCreds->getAuthDetail()
+            ]);
         }
 
         // Check the user status
@@ -346,7 +345,11 @@ class AuthenticationService extends Service
      */
     private function setRememberMeCookie($token, DateTime $createdDate, DateTime $expireDate)
     {
-        $value = json_encode(['expire' => $expireDate->getTimestamp(), 'created' => $createdDate->getTimestamp(), 'token' => $token]);
+        $value = json_encode([
+            'expire' => $expireDate->getTimestamp(),
+            'created' => $createdDate->getTimestamp(),
+            'token' => $token
+        ]);
         setcookie($this->remembermeId, $value, $expireDate->getTimestamp(), Config::$a ['cookie'] ['path'], Config::$a ['cookie'] ['domain']);
     }
 
@@ -376,7 +379,13 @@ class AuthenticationService extends Service
             // Set the user profile to Merged
             $userService->updateUser($user ['userId'], ['userStatus' => 'Merged']);
         }
-        $userService->addUserAuthProfile(['userId' => $sessAuth ['userId'], 'authProvider' => $authCreds->getAuthProvider(), 'authId' => $authCreds->getAuthId(), 'authCode' => $authCreds->getAuthCode(), 'authDetail' => $authCreds->getAuthDetail()]);
+        $userService->addUserAuthProfile([
+            'userId' => $sessAuth ['userId'],
+            'authProvider' => $authCreds->getAuthProvider(),
+            'authId' => $authCreds->getAuthId(),
+            'authCode' => $authCreds->getAuthCode(),
+            'authDetail' => $authCreds->getAuthDetail()
+        ]);
     }
 
     /**

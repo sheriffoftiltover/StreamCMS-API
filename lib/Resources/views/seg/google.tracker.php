@@ -6,11 +6,11 @@ use Destiny\Common\Config;
 
 <script>
     var _gaq = _gaq || [];
-    <?if(!empty(Config::$a['analytics']['account']) && !empty(Config::$a['analytics']['domainName'])):?>
+    <?phpif(!empty(Config::$a['analytics']['account']) && !empty(Config::$a['analytics']['domainName'])):?>
     _gaq.push(['_setAccount', '<?=Config::$a['analytics']['account']?>']);
     _gaq.push(['_setDomainName', '<?=Config::$a['analytics']['domainName']?>']);
     _gaq.push(['_trackPageview']);
-    <?endif;?>
+    <?phpendif;?>
     (function () {
         var ga = document.createElement('script');
         ga.type = 'text/javascript';

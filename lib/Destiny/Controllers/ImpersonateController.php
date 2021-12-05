@@ -41,7 +41,7 @@ class ImpersonateController
         $userService = UserService::instance();
         if (!empty ($userId)) {
             $user = $userService->getUserById($userId);
-        } else if (!empty ($username)) {
+        } elseif ($username !== []) {
             $user = $userService->getUserByUsername($username);
         }
 

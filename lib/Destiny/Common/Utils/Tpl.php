@@ -12,7 +12,7 @@ class Tpl
     {
         // Dodgy... this is done so that gnix can use the error pages too
         // So we store the /error/ pages in the root folder of the project
-        if (strpos($filename, 'errors/') === 0) {
+        if (str_starts_with($filename, 'errors/')) {
             return Config::$a['tpl']['error.path'] . $filename;
         } else {
             return Config::$a['tpl']['path'] . $filename;

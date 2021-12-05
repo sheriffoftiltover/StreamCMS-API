@@ -13,4 +13,4 @@ config/config.local.php
 /node_modules
 /scripts/redis/*.hash
 
-.idea/*
+/.idea

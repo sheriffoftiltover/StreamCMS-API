@@ -14,9 +14,9 @@ use Destiny\Common\Utils\Tpl;
                 <a href="https://twitter.com/<?= Config::$a['twitter']['user'] ?>/">twitter.com</a>
             </h3>
             <div class="entries">
-                <? if (!empty($model->tweets)): ?>
-                    <? foreach ($model->tweets as $tweetIndex => $tweet): ?>
-                        <? if ($tweetIndex == 3) {
+                <?php if (!empty($model->tweets)): ?>
+                    <?php foreach ($model->tweets as $tweetIndex => $tweet): ?>
+                        <?php if ($tweetIndex == 3) {
                             break;
                         } ?>
                         <div class="media">
@@ -31,10 +31,10 @@ use Destiny\Common\Utils\Tpl;
                                 <?= Tpl::fromNow(Date::getDateTime($tweet['created_at']), Date::FORMAT) ?>
                             </div>
                         </div>
-                    <? endforeach; ?>
-                <? else: ?>
+                    <?php endforeach; ?>
+                <?php else: ?>
                     <p class="loading">Loading tweets ...</p>
-                <? endif; ?>
+                <?php endif; ?>
             </div>
         </div>
 
@@ -44,9 +44,9 @@ use Destiny\Common\Utils\Tpl;
                 <a href="http://www.last.fm/user/<?= Config::$a['lastfm']['user'] ?>">last.fm</a>
             </h3>
             <div class="entries">
-                <? if (!empty($model->music) && isset($model->music['recenttracks']['track']) && !empty($model->music['recenttracks']['track'])): ?>
-                    <? foreach ($model->music['recenttracks']['track'] as $trackIndex => $track): ?>
-                        <? if ($trackIndex == 3) {
+                <?php if (!empty($model->music) && isset($model->music['recenttracks']['track']) && !empty($model->music['recenttracks']['track'])): ?>
+                    <?php foreach ($model->music['recenttracks']['track'] as $trackIndex => $track): ?>
+                        <?php if ($trackIndex == 3) {
                             break;
                         } ?>
                         <div class="media">
@@ -59,20 +59,20 @@ use Destiny\Common\Utils\Tpl;
                                 </div>
                                 <div class="artist"><?= Tpl::out($track['artist']['#text']) ?></div>
                                 <div class="details">
-                                    <? if ($track['date_str'] != ''): ?>
+                                    <?php if ($track['date_str'] != ''): ?>
                                         <span class="pull-right"><?= Tpl::fromNow(Date::getDateTime($track['date_str']), Date::FORMAT) ?></span>
-                                    <? endif; ?>
-                                    <? if ($trackIndex == 0 && $track['date_str'] == ''): ?>
+                                    <?php endif; ?>
+                                    <?php if ($trackIndex == 0 && $track['date_str'] == ''): ?>
                                         <span class="pull-right"><time>now playing</time></span>
-                                    <? endif; ?>
+                                    <?php endif; ?>
                                     <small class="album subtle"><?= Tpl::out($track['album']['#text']) ?></small>
                                 </div>
                             </div>
                         </div>
-                    <? endforeach; ?>
-                <? else: ?>
+                    <?php endforeach; ?>
+                <?php else: ?>
                     <p class="loading">Loading music ...</p>
-                <? endif; ?>
+                <?php endif; ?>
             </div>
         </div>
 

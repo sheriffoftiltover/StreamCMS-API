@@ -79,14 +79,10 @@ abstract class Params
 
     protected static function getKeyValue($key, $value, array $params = null)
     {
-        switch (self::getKeyType($key)) {
-            case 'int' :
-                $value = self::getValueAsInt($key, $value);
-                break;
-            default :
-                $value = self::getValueAsString($key, $value);
-                break;
-        }
+        $value = match (self::getKeyType($key)) {
+            'int' => self::getValueAsInt($key, $value),
+            default => self::getValueAsString($key, $value),
+        };
         return $value;
     }
 

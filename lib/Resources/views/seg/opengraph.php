@@ -7,4 +7,3 @@ $arr = ['og:site_name' => Config::$a ['meta'] ['shortName'], 'og:title' => Confi
 foreach ($arr as $k => $v) {
     echo '<meta property="' . $k . '" content="' . $v . '" />' . PHP_EOL;
 }
-?>

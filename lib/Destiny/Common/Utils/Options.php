@@ -15,7 +15,7 @@ abstract class Options
                 $method = 'set' . $key;
                 if (method_exists($object, $method)) {
                     $object->$method ($value);
-                } else if (property_exists($object, $key)) {
+                } elseif (property_exists($object, $key)) {
                     $object->$key = $value;
                 }
             }

@@ -70,19 +70,19 @@ use Destiny\Common\Utils\Tpl;
                     <label>Country:</label>
                     <select name="country" class="form-control">
                         <option value="">Select your country</option>
-                        <? $countries = Country::getCountries(); ?>
+                        <?php $countries = Country::getCountries(); ?>
                         <option value="">&nbsp;</option>
-                        <option value="US" <? if ($model->user['country'] == 'US'): ?>
-                            selected="selected" <? endif; ?>>United States
+                        <option value="US" <?php if ($model->user['country'] == 'US'): ?>
+                            selected="selected" <?php endif; ?>>United States
                         </option>
-                        <option value="GB" <? if ($model->user['country'] == 'GB'): ?>
-                            selected="selected" <? endif; ?>>United Kingdom
+                        <option value="GB" <?php if ($model->user['country'] == 'GB'): ?>
+                            selected="selected" <?php endif; ?>>United Kingdom
                         </option>
                         <option value="">&nbsp;</option>
-                        <? foreach ($countries as $country): ?>
+                        <?php foreach ($countries as $country): ?>
                             <option value="<?= $country['alpha-2'] ?>"
-                                    <? if ($model->user['country'] != 'US' && $model->user['country'] != 'GB' && $model->user['country'] == $country['alpha-2']): ?>selected="selected" <? endif; ?>><?= Tpl::out($country['name']) ?></option>
-                        <? endforeach; ?>
+                                    <?php if ($model->user['country'] != 'US' && $model->user['country'] != 'GB' && $model->user['country'] == $country['alpha-2']): ?>selected="selected" <?php endif; ?>><?= Tpl::out($country['name']) ?></option>
+                        <?php endforeach; ?>
                     </select>
                 </div>
 

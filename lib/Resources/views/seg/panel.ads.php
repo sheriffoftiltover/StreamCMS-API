@@ -61,7 +61,7 @@ use Destiny\Common\Config;
         <div class="public-ads">
             <div id="google-ad">
                 <script type="text/javascript">
-                    <? foreach (Config::$a ['googleads'] ['300x250'] as $k => $v) {
+                    <?php foreach (Config::$a ['googleads'] ['300x250'] as $k => $v) {
                         echo (is_int($v)) ? "$k = $v;\r\n" : "$k = \"$v\";\r\n";
                     } ?>
                 </script>

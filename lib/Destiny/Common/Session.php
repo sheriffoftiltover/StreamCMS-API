@@ -170,4 +170,3 @@ abstract class Session
 
 }
 
-?>

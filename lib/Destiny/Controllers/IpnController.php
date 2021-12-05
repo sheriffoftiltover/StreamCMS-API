@@ -159,7 +159,7 @@ class IpnController
                 if (strcasecmp($data ['payment_status'], PaymentStatus::PENDING) === 0) {
                     $subService->updateSubscriptionState($subscription ['subscriptionId'], SubscriptionStatus::PENDING);
                     $log->debug(sprintf('Updated subscription state %s status %s', $subscription ['subscriptionId'], SubscriptionStatus::PENDING));
-                } else if (strcasecmp($data ['payment_status'], PaymentStatus::COMPLETED) === 0) {
+                } elseif (strcasecmp($data ['payment_status'], PaymentStatus::COMPLETED) === 0) {
                     $subService->updateSubscriptionState($subscription ['subscriptionId'], SubscriptionStatus::ACTIVE);
                     $log->debug(sprintf('Updated subscription %s status %s', $subscription ['subscriptionId'], SubscriptionStatus::ACTIVE));
                 } else {
