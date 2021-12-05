@@ -1,111 +1,213 @@
 <?php
-declare(strict_types=1);
-
 namespace Destiny\Twitch;
 
-use DateInterval;
-use Destiny\Common\Application;
 use Destiny\Common\Config;
-use Destiny\Common\CurlBrowser;
-use Destiny\Common\Exception;
-use Destiny\Common\MimeType;
+use Destiny\Common\HttpClient;
+use Destiny\Common\Log;
 use Destiny\Common\Service;
 use Destiny\Common\Utils\Date;
-use Destiny\Common\Utils\String;
+use Destiny\Common\Utils\Http;
+use InvalidArgumentException;
 
-class TwitchApiService extends Service
-{
+/**
+ * @method static TwitchApiService instance()
+ */
+class TwitchApiService extends Service {
 
-    protected static $instance = null;
-    /**
-     * Stored when the broadcaster logs in, used to retrieve subscription
-     *
-     * @var string
-     */
-    protected $token = '';
+    const PRIVATE_API_URL = 'https://gql.twitch.tv/gql';
+    const PRIVATE_API_CLIENT_ID = 'kimne78kx3ncx6brgo4mv6wki5h1ko';
 
-    /**
-     * @param array $options
-     * @return ApiConsumer
-     */
-    public function getPastBroadcasts(array $options = [])
-    {
-        return new CurlBrowser (array_merge(['timeout' => 25, 'url' => new String ('https://api.twitch.tv/kraken/channels/{user}/videos?broadcasts=true&limit={limit}', ['user' => Config::$a ['twitch'] ['user'], 'limit' => 4]), 'contentType' => MimeType::JSON], $options));
+    private $apiBase = 'https://api.twitch.tv/kraken';
+
+    const CACHE_KEY_PREFIX = 'twitch.stream.';
+    const CACHE_KEY_STREAM_STATUS = 'streamstatus';
+    const CACHE_KEY_HOSTED_CHANNEL = 'hostedChannel';
+    const CACHE_KEY_ACCESS_TOKEN = 'accesstoken';
+
+    public function getApiCredentials(): array {
+        return Config::$a['oauth_providers']['twitch'];
     }
 
-    /**
-     * @return ApiConsumer
-     */
-    public function getStreamInfo(array $options = [])
-    {
-        return new CurlBrowser (array_merge([
-            'url' => new String ('https://api.twitch.tv/kraken/streams/{user}/', ['user' => Config::$a ['twitch'] ['user']]), 'contentType' => MimeType::JSON, 'onfetch' => function ($json)
-        {
+    public function getHostedChannelForUser(int $userId): ?array {
+        try {
+            $httpClient = HttpClient::instance();
+            $response = $httpClient->post(self::PRIVATE_API_URL, [
+                'headers' => [
+                    'User-Agent' => Config::userAgent(),
+                    'Client-ID' => self::PRIVATE_API_CLIENT_ID,
+                ],
+                'json' => [
+                    'query' => "query {
+                      user(id: $userId) {
+                        hosting {
+                          id
+                          login
+                          displayName
+                          stream {
+                            previewImageURL(width: 320, height: 180)
+                          }
+                        }
+                      }
+                    }"
+                ],
+                'http_errors' => true,
+            ]);
 
-            if (empty($json) || (isset ($json ['status']) && $json ['status'] == 503)) {
-                throw new Exception ('Twitch api down');
+            $json = json_decode($response->getBody(), true);
+            if (!empty($json) && isset($json['data']) && isset($json['data']['user']) && isset($json['data']['user']['hosting'])) {
+                $hosting = $json['data']['user']['hosting'];
+                return [
+                    'id' => $hosting['id'],
+                    'name' => $hosting['login'],
+                    'display_name' => $hosting['displayName'],
+                    'preview' => $hosting['stream']['previewImageURL'],
+                    'url' => "https://twitch.tv/{$hosting['login']}",
+                ];
             }
-
-            // Last broadcast if the stream is offline
-            // Called via static method, because we are in a closure
-            $channel = TwitchApiService::instance()->getChannel()->getResponse();
-            if (empty ($channel) || !is_array($channel)) {
-                throw new Exception (sprintf('Invalid stream channel response %s', $channel));
-            }
-
-            if (is_object($json) && isset ($json ['stream']) && $json ['stream'] != null) {
-                $json ['stream'] ['channel'] ['updated_at'] = Date::getDateTime($json ['stream'] ['channel'] ['updated_at'])->format(Date::FORMAT);
-            }
-
-            $json ['lastbroadcast'] = Date::getDateTime($channel ['updated_at'])->format(Date::FORMAT);
-            $json ['video_banner'] = $channel ['video_banner'];
-            $json ['previousbroadcast'] = null;
-            $json ['status'] = $channel ['status'];
-            $json ['game'] = $channel ['game'];
-
-            // Previous broadcast
-            $app = Application::instance();
-            $broadcasts = $app->getCacheDriver()->fetch('pastbroadcasts');
-            if (!empty ($broadcasts) && !empty ($broadcasts ['videos'])) {
-                $broadcast = [];
-                $broadcast ['length'] = $broadcasts ['videos'] [0] ['length'];
-                $broadcast ['preview'] = $broadcasts ['videos'] [0] ['preview'];
-                $broadcast ['url'] = $broadcasts ['videos'] [0] ['url'];
-                $broadcast ['recorded_at'] = $broadcasts ['videos'] [0] ['recorded_at'];
-                $broadcast ['views'] = $broadcasts ['videos'] [0] ['views'];
-                $json ['previousbroadcast'] = $broadcast;
-
-                // If there are previous broadcasts, base the last broadcast time on it, twitch seems to update the channel at random
-                $json ['lastbroadcast'] = Date::getDateTime($broadcast ['recorded_at'])->add(new DateInterval('PT' . $broadcast ['length'] . 'S'))->format(Date::FORMAT);
-
-            }
-
-            // Just some clean up
-            if (isset ($json ['_links'])) {
-                unset ($json ['_links']);
-            }
-            return $json;
+        } catch (\GuzzleHttp\Exception\BadResponseException $e) {
+            Log::error('Non-200 status code when getting hosted channel. ' . \GuzzleHttp\Psr7\str($e->getResponse()));
+        } catch (Exception $e) {
+            Log::error('Error getting hosted channel. ' . $e->getMessage());
         }
-        ], $options));
+
+        return null;
     }
 
     /**
-     *
-     * @param array $options
-     * @return ApiConsumer
+     * @return array|mixed
      */
-    public function getChannel(array $options = [])
-    {
-        return new CurlBrowser (array_merge(['url' => new String ('https://api.twitch.tv/kraken/channels/{user}', ['user' => Config::$a ['twitch'] ['user']]), 'contentType' => MimeType::JSON], $options));
+    public function getPastBroadcasts(int $channelId, int $limit = 4) {
+        $conf = $this->getApiCredentials();
+        $client = HttpClient::instance();
+        $response = $client->get("$this->apiBase/channels/$channelId/videos", [
+            'headers' => [
+                'User-Agent' => Config::userAgent(),
+                'Accept' => 'application/vnd.twitchtv.v5+json',
+                'Client-ID' => $conf['client_id']
+            ],
+            'query' => [
+                'broadcasts' => true,
+                'limit' => $limit
+            ]
+        ]);
+        if ($response->getStatusCode() == Http::STATUS_OK) {
+            try {
+                return \GuzzleHttp\json_decode($response->getBody(), true);
+            } catch (InvalidArgumentException $e) {
+                Log::error("Failed to parse past broadcasts." . $e->getMessage());
+            }
+        }
+        return null;
     }
 
     /**
-     * Singleton
-     *
-     * @return TwitchApiService
+     * Stream object is an object when streamer is ONLINE, otherwise null
+     * @return array|mixed
      */
-    public static function instance()
-    {
-        return parent::instance();
+    public function getStreamLiveDetails(int $channelId) {
+        $conf = $this->getApiCredentials();
+        $client = HttpClient::instance();
+        $response = $client->get("$this->apiBase/streams/$channelId", [
+            'headers' => [
+                'User-Agent' => Config::userAgent(),
+                'Accept' => 'application/vnd.twitchtv.v5+json',
+                'Client-ID' => $conf['client_id']
+            ]
+        ]);
+        if($response->getStatusCode() == Http::STATUS_OK) {
+            try {
+                $data = \GuzzleHttp\json_decode($response->getBody(), true);
+                if (isset($data['status']) && $data['status'] == 503) {
+                    return null;
+                }
+                return $data['stream'];
+            } catch (InvalidArgumentException $e) {
+                Log::error("Failed to parse streams. " . $e->getMessage());
+            }
+        }
+        return null;
     }
+
+    /**
+     * @return array|null
+     */
+    public function getChannel(int $channelId) {
+        $conf = $this->getApiCredentials();
+        $client = HttpClient::instance();
+        $response = $client->get("$this->apiBase/channels/$channelId", [
+            'headers' => [
+                'User-Agent' => Config::userAgent(),
+                'Accept' => 'application/vnd.twitchtv.v5+json',
+                'Client-ID' => $conf['client_id'],
+            ]
+        ]);
+        if($response->getStatusCode() == Http::STATUS_OK) {
+            try {
+                return \GuzzleHttp\json_decode($response->getBody(), true);
+            } catch (InvalidArgumentException $e) {
+                Log::error("Failed to parse channel. " . $e->getMessage());
+            }
+        }
+        return null;
+    }
+
+    /**
+     * [
+     *   'live'             => false,
+     *   'game'             => '',
+     *   'preview'          => null,
+     *   'status_text'      => null,
+     *   'started_at'       => null,
+     *   'ended_at'         => null,
+     *   'duration'         => 0,
+     *   'viewers'          => 0,
+     * ]
+     * @return array|null
+     */
+    public function getStreamStatus(int $channelId, string $lastOnline = null, int $lastStreamDuration = null, string $streamStartedTime = null) {
+        $channel = $this->getChannel($channelId);
+
+        if (empty($channel)) {
+            return null;
+        }
+
+        $live = $this->getStreamLiveDetails($channelId);
+        // if there are live details
+        //   use the current time
+        // else if there are no live details
+        //   if there is a cache lastOnline
+        //     use lastOnline
+        //   else
+        //     use channel[updated_date]
+        $lastSeen = (empty($live) ? (!empty($lastOnline) ? Date::getDateTime($lastOnline) : Date::getDateTime($channel['updated_at'])) : Date::getDateTime());
+
+        $data = [
+            'live' => !empty($live),
+            'game' => $channel['game'],
+            'status_text' => $channel['status'],
+            'ended_at' => $lastSeen->format(Date::FORMAT),
+        ];
+
+        if (!empty($live)) {
+
+            $created = Date::getDateTime($live['created_at']);
+            $data['preview'] = $live['preview']['medium'];
+            $data['started_at'] = $created->format(Date::FORMAT);
+            $data['duration'] = time() - $created->getTimestamp();
+            $data['viewers'] = $live['viewers'];
+
+        } else {
+
+            $broadcasts = $this->getPastBroadcasts($channelId, 1);
+            $lastPreview = (!empty($broadcasts) && isset($broadcasts['videos']) && !empty($broadcasts['videos'])) ? $broadcasts['videos'][0]['preview']['medium'] : null;
+            $data['preview'] = $lastPreview;
+            $data['started_at'] = $streamStartedTime;
+            $data['duration'] = $lastStreamDuration;
+            $data['viewers'] = 0;
+
+        }
+
+        return $data;
+    }
+
 }

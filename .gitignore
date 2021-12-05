@@ -4,13 +4,36 @@ config/config.local.php
 /.externalToolBuilders
 /.project
 /.buildpath
+/vagrant
+/.sass-cache
+/.tscache
 
 /config/cert_key.pem
 /config/sdk_config.ini
+/config/manifest.php
 
 /composer.lock
 /deployment.properties
 /node_modules
 /scripts/redis/*.hash
+.DS_Store
+*.swp
 
 /.idea
+
+./phpunit.phar
+/config/domains.blacklist.php
+/config/nick.blacklist.php
+/composer.phar
+/phpunit.phar
+/config/cert.pem
+
+/static/
+
+/config/*.pem
+/config/*.csr
+
+/public/*.txt
+/public/files
+/public/*.html
+/public/t

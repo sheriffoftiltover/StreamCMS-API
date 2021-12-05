@@ -1,449 +1,517 @@
 <?php
-declare(strict_types=1);
-
 namespace Destiny\Common\Authentication;
 
+use DateInterval;
 use DateTime;
-use Destiny\Chat\ChatIntegrationService;
+use Destiny\Chat\ChatRedisService;
+use Destiny\Chat\EmoteService;
 use Destiny\Commerce\SubscriptionsService;
 use Destiny\Common\Application;
 use Destiny\Common\Config;
 use Destiny\Common\Exception;
+use Destiny\Common\Log;
 use Destiny\Common\Service;
-use Destiny\Common\Session;
-use Destiny\Common\SessionCredentials;
+use Destiny\Common\Session\Session;
+use Destiny\Common\Session\SessionCredentials;
 use Destiny\Common\User\UserFeature;
-use Destiny\Common\User\UserFeaturesService;
 use Destiny\Common\User\UserRole;
 use Destiny\Common\User\UserService;
+use Destiny\Common\Utils\CryptoOpenSSL;
 use Destiny\Common\Utils\Date;
+use Destiny\Discord\DiscordAuthHandler;
+use Destiny\Google\GoogleAuthHandler;
+use Destiny\Reddit\RedditAuthHandler;
+use Destiny\Reddit\RedditService;
+use Destiny\StreamElements\StreamElementsAuthHandler;
+use Destiny\StreamLabs\StreamLabsAuthHandler;
+use Destiny\Twitch\TwitchAuthHandler;
+use Destiny\Twitch\TwitchBroadcastAuthHandler;
+use Destiny\Twitter\TwitterAuthHandler;
+use Destiny\YouTube\YouTubeMembershipService;
+use Destiny\YouTube\YouTubeBroadcasterAuthHandler;
 
-class AuthenticationService extends Service
-{
+/**
+ * @method static AuthenticationService instance()
+ */
+class AuthenticationService extends Service {
 
-    /**
-     * Singleton
-     *
-     * @var AuthenticationService
-     */
-    protected static $instance = null;
-
-    /**
-     * The name of the remember me cookie
-     *
-     * @var string
-     */
-    protected $remembermeId = '';
-
-    /**
-     * The salt for the token
-     *
-     * @var string
-     */
-    protected $remembermeSalt = 'r3xCdvd_sqe';
+    const REGEX_VALID_USERNAME = '/^[A-Za-z0-9_]{3,20}$/';
+    const REGEX_REPLACE_CHAR_USERNAME = '/[^A-Za-z0-9_]/';
+    const USERNAME_MIN = 3;
+    const USERNAME_MAX = 20;
 
     /**
-     * Singleton
-     *
-     * @return AuthenticationService
-     */
-    public static function instance()
-    {
-        if (static::$instance === null) {
-            static::$instance = new static ();
-            static::$instance->remembermeId = Config::$a ['rememberme'] ['cookieName'];
-        }
-        return static::$instance;
-    }
-
-    /**
-     * Validates a username
-     *
-     * @param string $username
-     * @param array $user
      * @throws Exception
      */
-    public function validateUsername($username, array $user = null, array $params = [])
-    {
-        if (empty ($username))
+    public function validateUsername(string $username) {
+        if (empty($username)) {
             throw new Exception ('Username required');
-
-        if (preg_match('/^[A-Za-z0-9_]{3,20}$/', $username) == 0)
+        }
+        if (preg_match(self::REGEX_VALID_USERNAME, $username) == 0) {
             throw new Exception ('Username may only contain A-z 0-9 or underscores and must be over 3 characters and under 20 characters in length.');
-
-        // nick-to-emote similarity heuristics, not perfect sadly ;(
-        $normalizeduname = strtolower($username);
-        $front = substr($normalizeduname, 0, 2);
-        foreach (Config::$a ['chat'] ['customemotes'] as $emote) {
-            $normalizedemote = strtolower($emote);
-            if (str_starts_with($normalizeduname, $normalizedemote))
-                throw new Exception ('Username too similar to an emote, try changing the first characters');
-
-            if ($emote == 'LUL')
-                continue;
-
-            $shortuname = substr($normalizeduname, 0, strlen($emote));
-            $emotefront = substr($normalizedemote, 0, 2);
-            if ($front == $emotefront and levenshtein($normalizedemote, $shortuname) <= 2)
-                throw new Exception ('Username too similar to an emote, try changing the first characters');
+        }
+        if (preg_match_all('/[0-9]{3}/', $username, $m) > 0) {
+            throw new Exception ('Too many numbers in a row in username');
+        }
+        if (preg_match_all('/[_]{2}/', $username, $m) > 0 || preg_match_all("/[_]+/", $username, $m) > 2) {
+            throw new Exception ('Too many underscores in username');
+        }
+        if (preg_match_all("/[0-9]/", $username, $m) > round(strlen($username) / 2)) {
+            throw new Exception ('Number ratio is too high in username');
         }
 
-        if (preg_match_all('/[0-9]{3}/', $username, $m) > 0)
-            throw new Exception ('Too many numbers in a row');
+        $normalizedUsername = strtolower($username);
 
-        if (preg_match_all('/[\_]{2}/', $username, $m) > 0 || preg_match_all('/[_]+/', $username, $m) > 2)
-            throw new Exception ('Too many underscores');
-
-        if (preg_match_all('/[0-9]/', $username, $m) > round(strlen($username) / 2))
-            throw new Exception ('Number ratio is too damn high');
-
-        if (UserService::instance()->getIsUsernameTaken($username, ((!empty ($user)) ? $user ['userId'] : 0)))
-            throw new Exception ('The username you asked for is already being used');
+        // nick blacklists
+        $blacklist = array_merge([], include _BASEDIR . '/config/nick.blacklist.php');
+        if (in_array($normalizedUsername, $blacklist)) {
+            throw new Exception ('Username is blacklisted');
+        }
     }
 
     /**
-     * Validate email
+     * Checks if a username is "too similar" to an emote prefix.
      *
-     * @param string $email
-     * @param array $user
      * @throws Exception
      */
-    public function validateEmail($email, array $user = null)
-    {
-        if (!filter_var($email, FILTER_VALIDATE_EMAIL))
-            throw new Exception ('A valid email is required');
+    public function checkUsernameForSimilarityToEmote(string $username, string $emotePrefix) {
+        $normalizedUsername = strtolower($username);
+        $normalizedPrefix = strtolower($emotePrefix);
 
-        if ($user !== [] && UserService::instance()->getIsEmailTaken($email, $user['userId']) || UserService::instance()->getIsEmailTaken($email)) {
-            throw new Exception ('The email you asked for is already being used');
+        // Ensure the username doesn't match the emote exactly. The username
+        // `Jamstiny` fails validation if an emote with prefix `JAMSTINY`
+        // exists.
+        if (strcmp($normalizedUsername, $normalizedPrefix) === 0) {
+            throw new Exception("Username is invalid because it matches the emote $emotePrefix.");
+        }
+
+        // Ensure the beginning of the username doesn't contain the entire emote
+        // prefix. `Jamstinycakes` fails if `JAMSTINY` exists.
+        if (strpos($normalizedUsername, $normalizedPrefix) === 0) {
+            throw new Exception("Username is invalid because it starts with the emote $emotePrefix.");
+        }
+
+        // Don't perform the check below for the `LUL` emote.
+        if ($normalizedPrefix == strtolower(EmoteService::LUL_EMOTE_PREFIX)) {
+            return;
+        }
+
+        // If the first two letters of the username and the emote prefix match,
+        // ensure the Levenshtein distance between the first `n` letters of the
+        // username (where `n` is the length of the emote prefix) and the emote
+        // prefix is <= 2. `Japstiny` fails because the distance between
+        // `japstiny` and `jamstiny` is 1. Only one letter has to be
+        // replaced/inserted/deleted to change `japstiny` to `jamstiny`.
+        $usernamePrefix = substr($normalizedUsername, 0, strlen($normalizedPrefix));
+        if (substr($normalizedUsername, 0, 2) == substr($normalizedPrefix, 0, 2) && levenshtein($normalizedPrefix, $usernamePrefix) <= 2) {
+            throw new Exception("Username is invalid because it has too many like characters to the emote $emotePrefix.");
         }
     }
 
     /**
-     * Check if a user has been flagged for updates, and refreshes the session credentials
+     * Checks if a username is "too similar" to any/all available emote prefixes.
+     *
      * @throws Exception
      */
-    public function init()
-    {
+    public function checkUsernameForSimilarityToAllEmotes(string $username) {
+        foreach ($this->getEmotesForValidation() as $emote) {
+            $this->checkUsernameForSimilarityToEmote($username, $emote['prefix']);
+        }
+    }
+
+    /**
+     * Gets emote prefixes that are "too similar" to a username.
+     *
+     * @return array Contains all emote prefixes that are too similar to the supplied username.
+     */
+    public function getEmotesTooSimilarToUsername(string $username): array {
+        $conflictingEmotes = [];
+        foreach ($this->getEmotesForValidation() as $emote) {
+            $prefix = $emote['prefix'];
+            try {
+                $this->checkUsernameForSimilarityToEmote($username, $prefix);
+            } catch (Exception $e) {
+                $conflictingEmotes[] = $prefix;
+            }
+        }
+
+        return $conflictingEmotes;
+    }
+
+    /**
+     * @throws Exception
+     */
+    public function validateEmail(string $email) {
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            throw new Exception ('A valid email is required');
+        }
+        $emailDomain = strtolower(substr($email, strpos($email, '@') + 1));
+        $blacklist = array_merge([], include _BASEDIR . '/config/domains.blacklist.php');
+        if (in_array($emailDomain, $blacklist)) {
+            throw new Exception ('email is blacklisted');
+        }
+    }
+
+    /**
+     * Starts up the session, looks for remember me if there was no session
+     * Also updates the session if the user is flagged for it.
+     * TODO this method is a mess
+     *
+     * @throws Exception
+     */
+    public function startSession() {
+        $redisService = ChatRedisService::instance();
+        $userService = UserService::instance();
+
+        // If the session has a cookie, start it
         $app = Application::instance();
-        // Check if the users session has been flagged for update
-        if (Session::isStarted()) {
-            $userId = Session::getCredentials()->getUserId();
-            $lastUpdate = $this->isUserFlaggedForUpdate($userId);
-            if (!empty ($userId) && $lastUpdate !== false) {
-                $this->clearUserUpdateFlag($userId, $lastUpdate);
-                $userManager = UserService::instance();
-                $user = $userManager->getUserById($userId);
-                if (!empty ($user)) {
-                    // Check the user status
-                    if (strcasecmp($user ['userStatus'], 'Active') !== 0) {
-                        throw new Exception (sprintf('User status not active. Status: %s', $user ['userStatus']));
+        $session = $app->getSession();
+        $cookie = $app->getSessionCookie();
+        if (!empty($session) || !empty($cookie)) {
+            $session->setupCookie($cookie);
+        }
+        //
+
+        $sid = $cookie->getValue();
+        if (!empty($sid) && Session::start() && Session::hasRole(UserRole::USER)) {
+            $sessionId = Session::getSessionId();
+            if (!empty($sessionId)) {
+                $success = $redisService->renewChatSessionExpiration($sessionId);
+
+                // If the renewal failed, then no chat session exists. A new
+                // session should be created if the user is allowed to chat.
+                if (!$success) {
+                    $creds = Session::getCredentials();
+                    $user = $userService->getUserById($creds->getUserId());
+                    if ($user['allowChatting']) {
+                        $redisService->setChatSession($creds, $sessionId);
                     }
-                    $credentials = $this->getUserCredentials($user, 'session');
-                    Session::updateCredentials($credentials);
-                    ChatIntegrationService::instance()->setChatSession($credentials, Session::getSessionId());
                 }
             }
         }
-    }
 
-    /**
-     * Check if the user has been flagged for update
-     *
-     * @param int $userId
-     * @return last update time | false
-     */
-    private function isUserFlaggedForUpdate($userId)
-    {
-        $cache = Application::instance()->getCacheDriver();
-        $lastUpdated = $cache->fetch(sprintf('refreshusersession-%s', $userId));
-        return ($lastUpdated && $lastUpdated != Session::get('lastUpdated')) ? $lastUpdated : false;
-    }
-
-    /**
-     * Updates the session last updated time to match the cache time
-     *
-     * @param int $userId
-     * @param int $lastUpdated
-     * @return bool
-     */
-    private function clearUserUpdateFlag($userId, $lastUpdated)
-    {
-        Session::set('lastUpdated', $lastUpdated);
-    }
-
-    /**
-     * Create a credentials object for a specific user
-     *
-     * @param array $user
-     * @param string $authProvider
-     * @return SessionCredentials
-     */
-    public function getUserCredentials(array $user, $authProvider)
-    {
-        $credentials = new SessionCredentials ($user);
-        $credentials->setAuthProvider($authProvider);
-        $credentials->addRoles(UserRole::USER);
-
-        // Add the user features
-        $credentials->addFeatures(UserFeaturesService::instance()->getUserFeatures($user ['userId']));
-
-        // Get the stored roles
-        $credentials->addRoles(UserService::instance()->getUserRolesByUserId($user ['userId']));
-
-        // Get the users active subscriptions
-        $subscription = SubscriptionsService::instance()->getUserActiveSubscription($user ['userId']);
-        if (!empty ($subscription)) {
-            $credentials->addRoles(UserRole::SUBSCRIBER);
-            $credentials->addFeatures(UserFeature::SUBSCRIBER);
-            if ($subscription ['subscriptionTier'] == 2) {
-                $credentials->addFeatures(UserFeature::SUBSCRIBERT2);
-            }
-            if ($subscription ['subscriptionTier'] == 3) {
-                $credentials->addFeatures(UserFeature::SUBSCRIBERT3);
-            }
-            if ($subscription ['subscriptionTier'] == 4) {
-                $credentials->addFeatures(UserFeature::SUBSCRIBERT4);
+        // Check the Remember me cookie if the session is invalid
+        if (!Session::hasRole(UserRole::USER)) {
+            $user = $this->getRememberMe();
+            if (!empty($user)) {
+                Session::start();
+                $this->updateWebSession($user);
+                $this->setRememberMe($user);
             }
         }
-        return $credentials;
-    }
 
-    /**
-     * Logout a user
-     */
-    public function logout()
-    {
-        ChatIntegrationService::instance()->deleteChatSession();
-        $userId = Session::getCredentials()->getUserId();
-        if (!empty ($userId)) {
-            $this->clearRememberMe($userId);
+        // Update the user if they have been flagged for an update
+        if (Session::hasRole(UserRole::USER)) {
+            $creds = Session::getCredentials();
+            $userId = $creds->getUserId();
+            if (!empty($userId) && $this->isUserFlaggedForUpdate($userId)) {
+                $user = $userService->getUserById($userId);
+                $this->clearUserUpdateFlag($userId);
+                $this->updateWebSession($user, $creds->getAuthProvider());
+            }
         }
-        Session::destroy();
     }
 
     /**
-     * Clear the local rememberme cookie
-     *
-     * @param int $userId
-     */
-    public function clearRememberMe($userId)
-    {
-        $cookie = $this->getRememberMeCookie();
-        if (!empty ($cookie)) {
-            $rememberMeService = RememberMeService::instance();
-            $rememberMeService->deleteRememberMe($userId, $cookie ['token'], 'rememberme');
-        }
-        $this->clearRememberMeCookie();
-    }
-
-    /**
-     * Return the current rememberme cookie
-     *
-     * @return array null
-     */
-    private function getRememberMeCookie()
-    {
-        if (isset ($_COOKIE [$this->remembermeId]) && !empty ($_COOKIE [$this->remembermeId])) {
-            return json_decode($_COOKIE [$this->remembermeId], true);
-        }
-        return null;
-    }
-
-    /**
-     * Clear the current user remember me cookie
-     */
-    private function clearRememberMeCookie()
-    {
-        if (isset ($_COOKIE [$this->remembermeId])) {
-            unset ($_COOKIE [$this->remembermeId]);
-        }
-        setcookie($this->remembermeId, '', time() - 3600, Config::$a ['cookie'] ['path'], Config::$a ['cookie'] ['domain']);
-    }
-
-    /**
-     * Check if a auth profile exists for a user
-     *
-     * @param AuthenticationCredentials $authCreds
-     * @return bool
-     */
-    public function getUserAuthProfileExists(AuthenticationCredentials $authCreds)
-    {
-        $user = UserService::instance()->getUserByAuthId($authCreds->getAuthId(), $authCreds->getAuthProvider());
-        if (empty ($user)) {
-            return false;
-        }
-        return true;
-    }
-
-    /**
-     * Handles the credentials after authorization
-     *
-     * @param array $authCreds
      * @throws Exception
      */
-    public function handleAuthCredentials(AuthenticationCredentials $authCreds)
-    {
+    public function buildUserCredentials(array $user, string $authProvider = ''): SessionCredentials {
         $userService = UserService::instance();
-        $user = $userService->getUserByAuthId($authCreds->getAuthId(), $authCreds->getAuthProvider());
+        $subscriptionService = SubscriptionsService::instance();
+        $creds = new SessionCredentials($user);
+        $creds->setAuthProvider($authProvider);
+        $creds->addRoles(UserRole::USER);
+        $creds->addFeatures($userService->getFeaturesByUserId($user ['userId']));
+        $creds->addRoles($userService->getRolesByUserId($user ['userId']));
 
-        // Make sure there is a user
-        if (empty ($user)) {
-            throw new Exception ('Invalid auth user');
+        if ($user['istwitchsubscriber']) {
+            $creds->addFeatures(UserFeature::SUBSCRIBER_TWITCH);
         }
 
-        // The user has registed before...
-        // Update the auth profile for this provider
-        $authProfile = $userService->getUserAuthProfile($user ['userId'], $authCreds->getAuthProvider());
-        if (!empty ($authProfile)) {
-            $userService->updateUserAuthProfile($user ['userId'], $authCreds->getAuthProvider(), [
-                'authCode' => $authCreds->getAuthCode(),
-                'authDetail' => $authCreds->getAuthDetail()
+        $sub = $subscriptionService->getUserActiveSubscription($user['userId']);
+        if (Config::$a[AuthProvider::YOUTUBE_BROADCASTER]['sync_memberships']) {
+            $youTubeMembership = YouTubeMembershipService::instance()->getMembershipDetailsForUserId($user['userId']);
+        }
+
+        if (!empty ($sub)) {
+            $creds->addRoles(UserRole::SUBSCRIBER);
+            $creds->addFeatures(UserFeature::SUBSCRIBER);
+            switch ($sub['subscriptionTier']) {
+                case 1:
+                    $creds->addFeatures(UserFeature::SUBSCRIBERT1);
+                    break;
+                case 2:
+                    $creds->addFeatures(UserFeature::SUBSCRIBERT2);
+                    break;
+                case 3:
+                    $creds->addFeatures(UserFeature::SUBSCRIBERT3);
+                    break;
+                case 4:
+                    $creds->addFeatures(UserFeature::SUBSCRIBERT4);
+                    break;
+            }
+            $creds->setSubscription([
+                'tier' => $sub['subscriptionTier'],
+                'source' => $sub['subscriptionSource'],
+                'type' => $sub['subscriptionType'],
+                'start' => Date::getDateTime($sub['createdDate'])->format(Date::FORMAT),
+                'end' => Date::getDateTime($sub['endDate'])->format(Date::FORMAT)
+            ]);
+        } else if (!empty($youTubeMembership)) {
+            $creds->addRoles(UserRole::SUBSCRIBER);
+            $creds->addFeatures(UserFeature::SUBSCRIBER);
+            switch($youTubeMembership['name']) {
+                case Config::$a['commerce']['tiers'][0]['tierLabel']:
+                    $creds->addFeatures(UserFeature::SUBSCRIBERT1);
+                    break;
+                case Config::$a['commerce']['tiers'][1]['tierLabel']:
+                    $creds->addFeatures(UserFeature::SUBSCRIBERT2);
+                    break;
+                case Config::$a['commerce']['tiers'][2]['tierLabel']:
+                    $creds->addFeatures(UserFeature::SUBSCRIBERT3);
+                    break;
+                case Config::$a['commerce']['tiers'][3]['tierLabel']:
+                    $creds->addFeatures(UserFeature::SUBSCRIBERT4);
+                    break;
+            }
+        } else if ($user['istwitchsubscriber']) {
+            $creds->addRoles(UserRole::SUBSCRIBER);
+            $creds->addFeatures(UserFeature::SUBSCRIBER);
+            $creds->setSubscription([
+                'tier' => 1,
+                'source' => 'twitch.tv',
+                'type' => null,
+                'start' => null,
+                'end' => null
             ]);
         }
 
-        // Check the user status
-        if (strcasecmp($user ['userStatus'], 'Active') !== 0) {
-            throw new Exception (sprintf('User status not active. Status: %s', $user ['userStatus']));
-        }
-
-        // Renew the session upon successful login, makes it slightly harder to hijack
-        $session = Session::instance();
-        $session->renew(true);
-
-        $credentials = $this->getUserCredentials($user, $authCreds->getAuthProvider());
-        Session::updateCredentials($credentials);
-        ChatIntegrationService::instance()->setChatSession($credentials, Session::getSessionId());
-
-        if (Session::set('rememberme')) {
-            $this->setRememberMe($user);
-        }
+        return $creds;
     }
 
     /**
-     * Generates a rememberme record
-     *
-     * @param array $user
+     * Generates a rememberme cookie
+     * Note the rememberme cookie has a long expiry unlike the session cookie
      */
-    public function setRememberMe(array $user)
-    {
-        $this->clearRememberMe($user ['userId']);
-        $createdDate = Date::getDateTime();
-        $expireDate = Date::getDateTime('NOW + 30 day');
-        $token = md5($user ['userId'] . $createdDate->getTimestamp() . $expireDate->getTimestamp() . $this->remembermeSalt);
-        $rememberMeService = RememberMeService::instance();
-        $rememberMeService->addRememberMe($user ['userId'], $token, 'rememberme', $expireDate, $createdDate);
-        $this->setRememberMeCookie($token, $createdDate, $expireDate);
-        return $token;
+    public function setRememberMe(array $user) {
+        $app = Application::instance();
+        $cookie = $app->getRememberMeCookie();
+        if (empty($cookie)) {
+            return;
+        }
+        $rawData = $cookie->getValue();
+        if (!empty($rawData)) {
+            $cookie->clearCookie();
+        }
+        $expires = Date::getDateTime(time() + mt_rand(0, 2419200)); // 0-28 days
+        $expires->add(new DateInterval('P1M'));
+        $data = CryptoOpenSSL::encrypt(serialize([
+            'userId' => $user['userId'],
+            'expires' => $expires->getTimestamp()
+        ]));
+        $cookie->setValue($data, Date::getDateTime('NOW + 2 MONTHS')->getTimestamp());
     }
 
     /**
-     * Set the remember me cookie
-     *
-     * @param string $token
-     * @param DateTime $createdDate
-     * @param DateTime $expireDate
-     * @param int $expire
+     * Returns the user record associated with a remember me cookie
+     * @return array|null
      */
-    private function setRememberMeCookie($token, DateTime $createdDate, DateTime $expireDate)
-    {
-        $value = json_encode([
-            'expire' => $expireDate->getTimestamp(),
-            'created' => $createdDate->getTimestamp(),
-            'token' => $token
-        ]);
-        setcookie($this->remembermeId, $value, $expireDate->getTimestamp(), Config::$a ['cookie'] ['path'], Config::$a ['cookie'] ['domain']);
+    protected function getRememberMe() {
+        $app = Application::instance();
+        $user = null;
+
+        $cookie = $app->getRememberMeCookie();
+        if (!$cookie) goto end;
+
+        $rawData = $cookie->getValue();
+        if (empty($rawData)) goto end;
+
+        if (strlen($rawData) < 64) goto cleanup;
+
+        $data = CryptoOpenSSL::decrypt($rawData);
+
+        if (!$data)
+            goto cleanup;
+
+        $data = unserialize($data);
+        if (!isset($data['expires']) or !isset($data['userId']))
+            goto cleanup;
+
+        $expires = Date::getDateTime($data['expires']);
+        if ($expires <= Date::getDateTime())
+            goto cleanup;
+
+        try {
+            $userService = UserService::instance();
+            $user = $userService->getUserById(intval($data['userId']));
+        } catch (Exception $e) {
+            Log::error("Error getting remember me user. {$e->getMessage()}");
+        }
+        goto end;
+
+        cleanup:
+        $cookie->clearCookie();
+        end:
+        return $user;
     }
 
     /**
-     * Handles the authentication and then merging of accounts
-     *
-     * @param AuthenticationCredentials $authCreds
      * @throws Exception
      */
-    public function handleAuthAndMerge(AuthenticationCredentials $authCreds)
-    {
-        $userService = UserService::instance();
-        $user = $userService->getUserByAuthId($authCreds->getAuthId(), $authCreds->getAuthProvider());
-        $sessAuth = Session::getCredentials()->getData();
-        // We need to merge the accounts if one exists
-        if (!empty ($user)) {
-            // If the profile userId is the same as the current one, the profiles are connceted, they shouldnt be here
-            if ($user ['userId'] == $sessAuth ['userId']) {
-                throw new Exception ('These account are already connected');
+    public function updateWebSession(array $user, string $provider = '') {
+        try {
+            $credentials = $this->buildUserCredentials($user, $provider);
+            //
+            $session = Session::instance();
+            foreach ($credentials->getData() as $name => $value) {
+                $session->set($name, $value);
             }
-            // If the profile user is older than the current user, prompt the user to rather login using the other profile
-            if (intval($user ['userId']) < $sessAuth ['userId']) {
-                throw new Exception (sprintf('Your user profile for the %s account is older. Please login and use that account to merge.', $authCreds->getAuthProvider()));
+            $session->setCredentials($credentials);
+            //
+            $redisService = ChatRedisService::instance();
+            $sessionId = Session::getSessionId();
+            if (boolval($user['allowChatting'])) {
+                $redisService->setChatSession($credentials, $sessionId);
+                $redisService->sendRefreshUser($credentials);
+            } else {
+                $redisService->removeChatSession($sessionId);
             }
-            // So we have a profile for a different user to the one logged in, we delete that user, and add a profile for the current user
-            $userService->removeAuthProfile($user ['userId'], $authCreds->getAuthProvider());
-            // Set the user profile to Merged
-            $userService->updateUser($user ['userId'], ['userStatus' => 'Merged']);
+        } catch (Exception $e) {
+            throw new Exception("Cannot update web session.", $e);
         }
-        $userService->addUserAuthProfile([
-            'userId' => $sessAuth ['userId'],
-            'authProvider' => $authCreds->getAuthProvider(),
-            'authId' => $authCreds->getAuthId(),
-            'authCode' => $authCreds->getAuthCode(),
-            'authDetail' => $authCreds->getAuthDetail()
-        ]);
     }
 
-    /**
-     * Returns the current userId of the remember me cookie
-     * Also performs validation on the cookie and the record in the Db
-     * Does not touch the DB unless there is a valid remember me cookie
-     *
-     * @return int false
-     */
-    public function getRememberMe()
-    {
-        $cookie = $this->getRememberMeCookie();
-        if (!empty ($cookie) && isset ($cookie ['created']) && isset ($cookie ['expire']) && isset ($cookie ['token'])) {
-            $rememberMeService = RememberMeService::instance();
-            $rememberMe = $rememberMeService->getRememberMe($cookie ['token'], 'rememberme');
-            if (!empty ($rememberMe)) {
-                try {
-                    if (Date::getDateTime($rememberMe ['createdDate']) != Date::getDateTime($cookie ['created'])) {
-                        throw new Exception ('Token invalid [createdDate] does not match');
-                    }
-                    if (Date::getDateTime($rememberMe ['expireDate']) != Date::getDateTime($cookie ['expire'])) {
-                        throw new Exception ('Token invalid [expireDate] does not match');
-                    }
-                    if ($cookie ['token'] != md5($rememberMe ['userId'] . Date::getDateTime($rememberMe ['createdDate'])->getTimestamp() . Date::getDateTime($rememberMe ['expireDate'])->getTimestamp() . $this->remembermeSalt)) {
-                        throw new Exception ('Token invalid [token] does not match');
-                    }
-                } catch (Exception $e) {
-                    $this->clearRememberMe($rememberMe ['userId']);
-                    Application::instance()->getLogger()->error(sprintf('Remember-me: %s', $e->getMessage()));
-                    return false;
-                }
-                return $rememberMe ['userId'];
+    public function removeWebSession() {
+        if (Session::isStarted()) {
+            $session = Session::instance();
+            if (!empty($session)) {
+                $app = Application::instance();
+                $app->getSessionCookie()->clearCookie();
+                $app->getRememberMeCookie()->clearCookie();
+                $redis = ChatRedisService::instance();
+                $redis->removeChatSession($session->getSessionId());
+                $session->destroy();
             }
         }
-        return false;
     }
 
     /**
      * Flag a user session for update
-     * @param int $userId
+     * So that on their next request, the session data is updated.
+     * Also does a chat session refresh
      */
-    public function flagUserForUpdate($userId)
-    {
-        $user = UserService::instance()->getUserById($userId);
-        $credentials = $this->getUserCredentials($user, 'session');
-
-        if (Session::instance() != null && Session::getCredentials()->getUserId() == $userId) {
-            // Update the current session if the userId is the same as the credential user id
-            Session::updateCredentials($credentials);
-            // Init / create the current users chat session
-            ChatIntegrationService::instance()->setChatSession($credentials, Session::getSessionId());
-        } else {
-            // Otherwise set a session variable which is picked up by the remember me service to update the session
-            $cache = Application::instance()->getCacheDriver();
-            $cache->save(sprintf('refreshusersession-%s', $userId), time(), intval(ini_get('session.gc_maxlifetime')));
+    public function flagUserForUpdate(int $userId) {
+        try {
+            $userService = UserService::instance();
+            $user = $userService->getUserById($userId);
+            if (!empty($user)) {
+                $creds = $this->buildUserCredentials($user);
+                $this->setUserUpdateFlag($userId);
+                $redisService = ChatRedisService::instance();
+                $redisService->sendRefreshUser($creds);
+            }
+        } catch (Exception $e) {
+            Log::error("Error flagging user for update. {$e->getMessage()}");
         }
-        ChatIntegrationService::instance()->refreshChatUserSession($credentials);
     }
 
+    /**
+     * Checks if the auth provider account meets all requirements to connect.
+     */
+    public function validateAuthAccountDetails(OAuthResponse $oauthResponse): bool {
+        switch ($oauthResponse->getAuthProvider()) {
+            case AuthProvider::REDDIT:
+                $redditService = RedditService::instance(); 
+                $userIdentity = $redditService->getUserIdentity($oauthResponse->getAccessToken());
+                if (empty($userIdentity)) {
+                    throw new Exception('There was an error validating your account. Please try again later.');
+                }
+
+                $minimumAccountAgeDays = Config::$a['oauth_providers']['reddit']['minimum_account_age_days'];
+                $accountCreationDate = (new DateTime())->setTimestamp($userIdentity['created_utc']);
+                $accountAge = date_diff(new DateTime(), $accountCreationDate);
+                $isOldEnough = $accountAge->days >= $minimumAccountAgeDays;
+
+                $minimumKarma = Config::$a['oauth_providers']['reddit']['minimum_karma'];
+                $hasEnoughKarma = $userIdentity['total_karma'] >= $minimumKarma;
+
+                Log::debug("Reddit account age: {$accountAge->days}");
+                Log::debug("Reddit account total karma: {$userIdentity['total_karma']}");
+
+                if (!$isOldEnough || !$hasEnoughKarma) {
+                    throw new Exception("Your reddit account needs at least $minimumKarma karma and must be at least $minimumAccountAgeDays days old to connect.");
+                }
+
+                return true;
+            default:
+                return true;
+        }
+    }
+
+    private function isUserFlaggedForUpdate(int $userId): bool {
+        $cache = Application::getNsCache();
+        $lastUpdated = $cache->fetch("refreshusersession-$userId");
+        return !empty($lastUpdated);
+    }
+
+    private function clearUserUpdateFlag(int $userId) {
+        $cache = Application::getNsCache();
+        $cache->delete("refreshusersession-$userId");
+    }
+
+    private function setUserUpdateFlag(int $userId) {
+        $cache = Application::getNsCache();
+        $cache->save("refreshusersession-$userId", time(), intval(ini_get('session.gc_maxlifetime')));
+    }
+
+    private function getEmotesForValidation(): array {
+        try {
+            return EmoteService::instance()->findAllEmotes();
+        } catch (Exception $e) {
+            Log::error("Emote failed to load. {$e->getMessage()}");
+        }
+        return [];
+    }
+
+    /**
+     * @throws Exception
+     */
+    public function getLoginAuthHandlerByType(string $type): AuthenticationHandler {
+        $authHandler = null;
+        switch (strtolower($type)) {
+            case AuthProvider::TWITCH:
+                $authHandler = new TwitchAuthHandler();
+                break;
+            case AuthProvider::TWITTER:
+                $authHandler = new TwitterAuthHandler();
+                break;
+            case AuthProvider::GOOGLE:
+                $authHandler = new GoogleAuthHandler();
+                break;
+            case AuthProvider::YOUTUBE:
+                $authHandler = new YouTubeAuthHandler();
+                break;
+            case AuthProvider::YOUTUBE_BROADCASTER:
+                $authHandler = new YouTubeBroadcasterAuthHandler();
+                break;
+            case AuthProvider::REDDIT:
+                $authHandler = new RedditAuthHandler();
+                break;
+            case AuthProvider::DISCORD:
+                $authHandler = new DiscordAuthHandler();
+                break;
+            case AuthProvider::STREAMELEMENTS:
+                $authHandler = new StreamElementsAuthHandler();
+                break;
+            case AuthProvider::STREAMLABS:
+                $authHandler = new StreamLabsAuthHandler();
+                break;
+            case AuthProvider::TWITCHBROADCAST:
+                $authHandler = new TwitchBroadcastAuthHandler();
+                break;
+            default:
+                throw new Exception('No authentication handler found.');
+        }
+        return $authHandler;
+    }
 }

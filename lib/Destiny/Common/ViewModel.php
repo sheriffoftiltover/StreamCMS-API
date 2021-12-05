@@ -1,74 +1,72 @@
 <?php
-declare(strict_types=1);
-
 namespace Destiny\Common;
 
-class ViewModel
-{
+use JsonSerializable;
+use stdClass;
 
+class ViewModel extends stdClass implements JsonSerializable {
+    
     /**
-     * List of properties
-     *
      * @var array
      */
     protected $vars = [];
 
     /**
-     * Set the variables via the constructor
-     *
-     * @param array $params
+     * ViewModel constructor.
      */
-    public function __construct(array $params = null)
-    {
-        if (!empty ($params)) {
-            foreach ($params as $name => $value) {
+    public function __construct(array $params = null) {
+        if (! empty ( $params )) {
+            foreach ( $params as $name => $value ) {
                 $this->vars [$name] = $value;
             }
         }
     }
 
     /**
-     * Return all the views data
-     *
-     * @return array
+     * TODO figure a way to remove this
+     * @throws ViewModelException
      */
-    public function getData()
-    {
+    public function getContent(string $filename): string {
+        $path = _BASEDIR . '/views/' . $filename;
+        $contents = '';
+        try {
+            ob_start();
+            /** @noinspection PhpIncludeInspection */
+            require $path;
+            $contents = ob_get_contents();
+        } catch (\Exception $e) {
+            throw new ViewModelException("Exception thrown in template. [$filename]", $e);
+        } finally {
+            ob_end_clean ();
+        }
+        return $contents;
+    }
+
+    public function getData(): array {
         return $this->vars;
     }
 
-    /**
-     * get a variable value by name
-     *
-     * @param string $name
-     * @param mix $value
-     */
-    public function __get($name)
-    {
-        return (isset ($this->vars [$name])) ? $this->vars [$name] : null;
-    }
-
-    /**
-     * Set a variable value
-     *
-     * @param string $name
-     * @param mix $value
-     */
-    public function __set($name, $value)
-    {
-        $this->vars [$name] = $value;
+    public function __set(string $name, $value) {
+        $this->vars[$name] = $value;
         return $value;
     }
 
-    /**
-     * Check if a var isset
-     *
-     * @param string $name
-     */
-    public function __isset($name)
-    {
+    public function __get(string $name) {
+        return (isset ($this->vars [$name])) ? $this->vars [$name] : null;
+    }
+
+    public function __isset(string $name): bool {
         return isset ($this->vars [$name]);
     }
 
+    /**
+     * Specify data which should be serialized to JSON
+     * @link https://php.net/manual/en/jsonserializable.jsonserialize.php
+     * @return mixed data which can be serialized by <b>json_encode</b>,
+     * which is a value of any type other than a resource.
+     * @since 5.4.0
+     */
+    public function jsonSerialize(): array {
+        return $this->getData();
+    }
 }
-

@@ -1,36 +1,28 @@
 <?php
-declare(strict_types=1);
 
+use Destiny\Common\DirectoryClassIterator;
 use Destiny\Common\Application;
-use Destiny\Common\Config;
-use Destiny\Common\Exception;
-use Destiny\Common\Scheduler;
+use Destiny\Common\Cron\Scheduler;
+use Destiny\Common\Cron\TaskAnnotationLoader;
+use Doctrine\Common\Annotations\AnnotationReader;
+use Destiny\Common\Log;
+use Monolog\Handler\StreamHandler;
+use Monolog\Logger;
 
-ini_set('mysql.connect_timeout', 10);
-ini_set('max_execution_time', 60);
-
-$context = new stdClass();
-$context->log = 'cron';
-require __DIR__ . '/../lib/boot.php';
+require __DIR__ . '/../lib/boot.app.php';
+Log::$log->pushHandler(new StreamHandler('php://stdout', Logger::INFO));
 $app = Application::instance();
 
-// Cron is run every 60 seconds.
-// There can be a time where actions are executed before they have ended
-$log = $app->getLogger();
-$scheduler = new Scheduler (Config::$a ['scheduler']);
-$scheduler->setLogger($log);
-$scheduler->loadSchedule();
-$stime = microtime(true);
 try {
-    echo PHP_EOL . 'Scheduler starting';
-    $scheduler->executeShedule(false);
-    echo PHP_EOL . 'Scheduler completed';
+    $scheduler = new Scheduler ();
+    TaskAnnotationLoader::loadClasses(
+        new DirectoryClassIterator (_BASEDIR . '/lib/', 'Destiny/Tasks/'),
+        new AnnotationReader(),
+        $scheduler
+    );
+    $scheduler->loadTasks();
+    $scheduler->execute();
 } catch (Exception $e) {
-    $log->error($e->getMessage());
-    echo PHP_EOL . 'Scheduler completed with errors';
-} catch (\Exception $e) {
-    $log->critical($e->getMessage());
-    echo PHP_EOL . 'Scheduler completed with errors';
+    Log::error("Could not setup scheduler. " . $e->getMessage());
+    exit(1);
 }
-echo PHP_EOL . 'Completed in ' . (microtime(true) - $stime) . ' seconds';
-echo PHP_EOL;

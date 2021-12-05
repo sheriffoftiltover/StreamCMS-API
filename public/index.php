@@ -1,46 +1,58 @@
 <?php
-declare(strict_types=1);
 
 use Destiny\Common\Application;
-use Destiny\Common\SessionCredentials;
-use Destiny\Common\SessionCookie;
-use Destiny\Common\SessionInstance;
-use Destiny\Common\Session;
-use Destiny\Common\Config;
-use Destiny\Common\Routing\Router;
-use Destiny\Common\Routing\RouteAnnotationClassLoader;
+use Destiny\Common\ControllerAnnotationLoader;
 use Destiny\Common\DirectoryClassIterator;
-use Destiny\Common\Authentication\RememberMeService;
+use Destiny\Common\Log;
+use Destiny\Common\Routing\Route;
+use Destiny\Common\Routing\Router;
+use Destiny\Common\Session\SessionCredentials;
+use Destiny\Common\Session\SessionInstance;
+use Destiny\Common\Session\Cookie;
+use Destiny\Common\Config;
 use Destiny\Common\Authentication\AuthenticationService;
-use Doctrine\Common\Annotations\FileCacheReader;
-use Doctrine\Common\Annotations\AnnotationReader;
 use Destiny\Common\Request;
+use Destiny\Common\Utils\Http;
+use Doctrine\Common\Annotations\AnnotationReader;
 
 ini_set('session.gc_maxlifetime', 5 * 60 * 60);
 
-$context = new stdClass ();
-$context->log = 'web';
-require __DIR__ . '/../lib/boot.php';
-
+require __DIR__ . '/../lib/boot.app.php';
 $app = Application::instance();
-$app->setRouter(new Router());
-$app->setAnnotationReader(new FileCacheReader(new AnnotationReader(), realpath(Config::$a ['cache'] ['path']) . '/annotation/'));
 
-// Annotation reader and routing
-RouteAnnotationClassLoader::loadClasses(new DirectoryClassIterator (_BASEDIR . '/lib/', 'Destiny/Controllers/'), $app->getAnnotationReader());
+try {
+    // Routing
+    $router = new Router();
+    ControllerAnnotationLoader::factory(
+        new DirectoryClassIterator (_BASEDIR . '/lib/', 'Destiny/Controllers/'),
+        new Doctrine\Common\Annotations\CachedReader(new AnnotationReader(), Application::getVerCache()),
+        $router
+    );
 
-// Setup user session
-$session = new SessionInstance ();
-$session->setSessionCookie(new SessionCookie(Config::$a ['cookie']));
-$session->setCredentials(new SessionCredentials());
-$app->setSession($session);
+    // Config.links routes
+    foreach (Config::$a['links'] as $path => $url) {
+        $router->addRoute(new Route(['path' => $path, 'url' => $url]));
+    }
+    $app->setRouter($router);
 
-// Start the session if a valid session cookie is found
-Session::start(Session::START_IFCOOKIE);
+    // Setup user session
+    $app->setSession(new SessionInstance());
+    $app->setSessionCookie(new Cookie('sid', Config::$a['cookie']));
+    $app->setRememberMeCookie(new Cookie('rememberme', Config::$a['cookie']));
 
-// Startup the remember me and auth service
-AuthenticationService::instance()->init();
-RememberMeService::instance()->init();
+    $authService = AuthenticationService::instance();
+    $authService->startSession();
 
-// Attempts to find a route and execute it
-$app->executeRequest(new Request());
+    // Attempts to find a route and execute it
+    $app->executeRequest(new Request([
+        'uri' => $_SERVER['REQUEST_URI'],
+        'method' => $_SERVER['REQUEST_METHOD'],
+        'headers' => Http::extractHeaders($_SERVER),
+        'address' => Http::extractIpAddress($_SERVER),
+        'get' => $_GET,
+        'post' => $_POST
+    ]));
+} catch (Exception $e) {
+    Log::error($e->getMessage());
+    echo "Application failed to start. Check the error logs for more info.";
+}

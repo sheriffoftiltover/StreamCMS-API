@@ -1,29 +1,21 @@
 <?php
-declare(strict_types=1);
-
 namespace Destiny\Common\Annotation;
 
 /**
  * @Annotation
- * @Target({"CLASS","METHOD"})
+ * @Target({"METHOD"})
  */
-class HttpMethod
-{
+class HttpMethod {
 
     /**
-     * A list of allowed HTTP methods
-     * @var array<string>
+     * @var string[]
      */
     public $allow;
 
-    /**
-     * A list of allowed methods
-     * @param array $params
-     */
-    public function __construct(array $params)
-    {
-        $this->allow = $params ['value'];
+    public function __construct(array $params = null) {
+        if (!empty($params)) {
+            $this->allow = $params ['value'];
+        }
     }
 
 }
-

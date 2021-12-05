@@ -1,81 +1,88 @@
 <?php
-declare(strict_types=1);
-
 namespace Destiny\Common\Utils;
 
 use DateTime;
+use Destiny\Common\Authentication\AuthenticationService;
 use Destiny\Common\Config;
+use Exception;
 
-class Tpl
-{
+class Tpl {
 
-    public static function file($filename)
-    {
-        // Dodgy... this is done so that gnix can use the error pages too
-        // So we store the /error/ pages in the root folder of the project
-        if (str_starts_with($filename, 'errors/')) {
-            return Config::$a['tpl']['error.path'] . $filename;
-        } else {
-            return Config::$a['tpl']['path'] . $filename;
-        }
-    }
-
-    public static function jsout($var)
-    {
+    public static function jsout($var) {
         return json_encode($var, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP);
     }
 
-    public static function flag($code)
-    {
-        $country = Country::getCountryByCode($code);
-        return (!empty ($country)) ? '<i title="' . self::out($country ['name']) . '" class="flag flag-' . self::out(strtolower($code)) . '"></i>' : '';
-    }
-
-    public static function out($var, $default = null)
-    {
+    public static function out($var, string $default = null): string {
+        if ($var instanceof Exception) {
+            $var = $var->getMessage();
+        }
         return htmlentities(((empty ($var)) ? $default : $var), ENT_QUOTES, 'UTF-8');
     }
 
-    public static function n($number)
-    {
+    public static function number($number) {
         return number_format($number);
     }
 
-    public static function title($title)
-    {
-        $str = Config::$a ['meta'] ['title'];
-        if (!empty ($title)) {
-            $str = sprintf('%s : %s', Config::$a ['meta'] ['shortName'], $title);
-        }
-        return $str;
+    /**
+     * JSON-encodes and sanitizes an array for use in a `data-*` attribute.
+     */
+    public static function arrayOut(array $rawArray): string {
+        $encodedArray = json_encode($rawArray);
+        $sanitizedArray = htmlentities($encodedArray, ENT_QUOTES, 'UTF-8');
+
+        return $sanitizedArray;
     }
 
-    public static function currency($currencyCode, $amount)
-    {
-        $amount = ($amount == null || !is_numeric($amount)) ? '0.00' : number_format($amount, 2);
-        if (isset (Config::$a ['commerce'] ['currencies'] [$currencyCode])) {
-            $symbol = Config::$a ['commerce'] ['currencies'] [$currencyCode] ['symbol'];
-            return $symbol . $amount . ' ' . $currencyCode;
+    public static function title($title): string {
+        $title = trim("$title");
+        if (!empty($title)) {
+            $str = sprintf('%s - %s', $title, Config::$a['meta']['shortName']);
+        } else {
+            $str = Config::$a['meta']['title'];
         }
-        return $currencyCode . ' ' . $amount;
+        return "<title>$str</title>\r\n";
     }
 
-    public static function mask($str, $padStr = '*', $show = 6, $pad = 10)
-    {
-        if (strlen($str) >= $show) {
-            $str = substr($str, 0, $show);
-        }
-        return self::out(str_pad($str, $pad, $padStr));
-    }
-
-    public static function moment(DateTime $date, $format, $momentFormat = 'MMMM Do, h:mm:ss a, YYYY')
-    {
+    public static function moment(DateTime $date, string $format = null, string $momentFormat = 'MMMM Do, h:mm:ss a, YYYY'): string {
         return sprintf('<time title="%s" data-moment="true" datetime="%s" data-format="%s">%s</time>', $date->format(Date::STRING_FORMAT), $date->format(Date::FORMAT), $momentFormat, $date->format($format));
     }
 
-    public static function fromNow(DateTime $date, $format, $momentFormat = 'MMMM Do, h:mm:ss a, YYYY')
-    {
+    public static function fromNow(DateTime $date, string $momentFormat = 'MMMM Do, h:mm:ss a, YYYY'): string {
         return sprintf('<time title="%s" data-moment="true" data-moment-fromnow="true" datetime="%s" data-format="%s">%s</time>', $date->format(Date::STRING_FORMAT), $date->format(Date::FORMAT), $momentFormat, Date::getElapsedTime($date));
+    }
+
+    public static function manifestScript(string $name, array $attr = []): string {
+        $url = Config::cdn() . '/' . Config::$a['manifest'][$name];
+        $attribs = join(' ', array_map(function($v, $p) { return "$v=\"$p\""; }, array_keys($attr), $attr));
+        $str = !empty($attribs) ? " $attribs" : "";
+        return "<script$str src=\"$url\"></script>\r\n";
+    }
+
+    public static function manifestLink(string $name, array $attr = []): string {
+        $url = Config::cdn() . '/' . Config::$a['manifest'][$name];
+        $attr = array_merge(['rel' => 'stylesheet', 'media' => 'screen'], $attr);
+        $attribs = join(' ', array_map(function($v, $p) { return "$v=\"$p\""; }, array_keys($attr), $attr));
+        $str = !empty($attribs) ? " $attribs" : "";
+        return "<link$str href=\"$url\">\r\n";
+    }
+
+    public static function ipLookupLink($ip): array {
+        return array_map(function($n) use ($ip) {
+            $url = str_replace('{IP_ADDRESS}', urlencode($ip), $n['url']);
+            $n['link'] = $url;
+            return $n;
+        }, Config::$a['iplookupservices']);
+    }
+
+    public static function userProfileElement(string $authProviderName, string $username): string {
+        $authService = AuthenticationService::instance();
+        $authHandler = $authService->getLoginAuthHandlerByType($authProviderName);
+
+        $sanitizedUsername = htmlentities($username);
+        $profileUrl = $authHandler->getUserProfileUrl($sanitizedUsername);
+
+        // No need to use link tags if there is no profile URL.
+        return !empty($profileUrl) ? "<a href=\"$profileUrl\" target=\"_blank\">$sanitizedUsername</a>" : $sanitizedUsername;
     }
 
 }

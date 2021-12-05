@@ -1,112 +1,101 @@
 <?php
-declare(strict_types=1);
-
 namespace Destiny\Controllers;
 
-use Destiny\Chat\ChatIntegrationService;
+use Destiny\Chat\ChatBanService;
+use Destiny\Chat\ChatRedisService;
 use Destiny\Commerce\OrdersService;
-use Destiny\Commerce\OrderStatus;
-use Destiny\Commerce\PaymentProfileStatus;
 use Destiny\Commerce\PaymentStatus;
-use Destiny\Commerce\PayPalApiService;
+use Destiny\Commerce\SubPurchaseType;
 use Destiny\Commerce\SubscriptionsService;
 use Destiny\Commerce\SubscriptionStatus;
+use Destiny\Common\Annotation\Controller;
+use Destiny\Common\Annotation\HttpMethod;
+use Destiny\Common\Annotation\ResponseBody;
+use Destiny\Common\Annotation\Route;
+use Destiny\Common\Annotation\Secure;
 use Destiny\Common\Application;
 use Destiny\Common\Authentication\AuthenticationService;
+use Destiny\Common\Authentication\AuthProvider;
 use Destiny\Common\Config;
 use Destiny\Common\Exception;
-use Destiny\Common\MimeType;
-use Destiny\Common\Response;
-use Destiny\Common\Session;
+use Destiny\Common\Log;
+use Destiny\Common\Request;
+use Destiny\Common\Session\Session;
+use Destiny\Common\User\UserFeature;
 use Destiny\Common\User\UserRole;
 use Destiny\Common\User\UserService;
 use Destiny\Common\Utils\Date;
 use Destiny\Common\Utils\FilterParams;
 use Destiny\Common\Utils\Http;
 use Destiny\Common\ViewModel;
+use Destiny\Discord\DiscordMessenger;
+use Destiny\Google\GoogleRecaptchaHandler;
+use Destiny\PayPal\PayPalApiService;
+use Destiny\StreamLabs\StreamLabsAlertsType;
+use Destiny\StreamLabs\StreamLabsService;
+use Doctrine\DBAL\ConnectionException;
+use Doctrine\DBAL\DBALException;
 
 /**
  * @Controller
  */
-class SubscriptionController
-{
+class SubscriptionController {
 
     /**
      * @Route ("/subscribe")
-     *
-     * Build subscribe checkout form
-     *
-     * @param array $params
-     */
-    public function subscribe(array $params, ViewModel $model)
-    {
-        $subscriptionsService = SubscriptionsService::instance();
-
-        if (Session::hasRole(UserRole::USER)) {
-            $userId = Session::getCredentials()->getUserId();
-
-            // Pending subscription
-            $subscription = $subscriptionsService->getUserPendingSubscription($userId);
-            if (!empty ($subscription)) {
-                throw new Exception ('You already have a subscription in the "pending" state.');
-            }
-
-            // Active subscription
-            $model->subscription = $subscriptionsService->getUserActiveSubscription($userId);
-        }
-
-        $model->title = 'Subscribe';
-        $model->subscriptions = Config::$a ['commerce'] ['subscriptions'];
-        return 'subscribe';
-    }
-
-    /**
-     * @Route ("/subscription/cancel")
-     * @Secure ({"USER"})
-     * @HttpMethod ({"GET"})
-     *
-     * @param array $params
-     * @param ViewModel $model
-     * @return string
      * @throws Exception
      */
-    public function subscriptionCancel(array $params, ViewModel $model)
-    {
-        $subscription = SubscriptionsService::instance()->getUserActiveSubscription(Session::getCredentials()->getUserId());
-        if (empty ($subscription)) {
-            throw new Exception ('Must have an active subscription');
-        }
-        $model->subscription = $subscription;
-        return 'profile/cancelsubscription';
+    public function subscribe(ViewModel $model): string {
+        $model->title = 'Subscribe';
+        $model->tiers = Config::$a['commerce']['tiers'];
+        $model->subscriptions = Config::$a ['commerce'] ['subscriptions'];
+        return 'subscribe';
     }
 
     /**
      * @Route ("/subscription/{id}/cancel")
      * @Secure ({"USER"})
      * @HttpMethod ({"GET"})
-     *
-     * @param array $params
-     * @param ViewModel $model
-     * @return string
      * @throws Exception
      */
-    public function subscriptionGiftCancel(array $params, ViewModel $model)
-    {
-        FilterParams::isRequired($params, 'id');
-
+    public function subscriptionCancel(array $params, ViewModel $model): string {
+        FilterParams::required($params, 'id');
+        $subscriptionsService = SubscriptionsService::instance();
+        $userId = Session::getCredentials()->getUserId();
+        $subscriptionId = $params['id'];
+        $sub = $subscriptionsService->findById($subscriptionId);
+        if (empty ($sub) || $sub['userId'] !== $userId ) {
+            Session::setErrorBag('Invalid subscription');
+            return 'redirect: /profile';
+        }
+        $model->subscription = $sub;
+        $model->title = 'Cancel Subscription';
+        return 'profile/cancelsubscription';
+    }
+    
+    /**
+     * @Route ("/subscription/gift/{id}/cancel")
+     * @Secure ({"USER"})
+     * @HttpMethod ({"GET"})
+     * @throws Exception
+     */
+    public function subscriptionGiftCancel(array $params, ViewModel $model): string {
+        FilterParams::required($params, 'id');
         $subscriptionsService = SubscriptionsService::instance();
         $userService = UserService::instance();
-
         $userId = Session::getCredentials()->getUserId();
-        $subscription = $subscriptionsService->getActiveSubscriptionByIdAndGifterId($params['id'], $userId);
-        $giftee = $userService->getUserById($subscription['userId']);
-
-        if (empty($subscription)) {
-            throw new Exception ('Invalid subscription');
+        $sub = $subscriptionsService->findById($params['id']);
+        if (empty($sub) || $sub['status'] !== SubscriptionStatus::ACTIVE) {
+            Session::setErrorBag('Must be an valid subscription');
+            return 'redirect: /profile';
         }
-
-        $model->subscription = $subscription;
-        $model->giftee = $giftee;
+        if ($sub['gifter'] !== $userId) {
+            Session::setErrorBag('Not allowed to cancel this subscription');
+            return 'redirect: /profile';
+        }
+        $model->subscription = $sub;
+        $model->giftee = $userService->getUserById($sub['userId']);
+        $model->title = 'Cancel Subscription';
         return 'profile/cancelsubscription';
     }
 
@@ -114,490 +103,579 @@ class SubscriptionController
      * @Route ("/subscription/cancel")
      * @Secure ({"USER"})
      * @HttpMethod ({"POST"})
-     * @Transactional
-     *
-     * @param array $params
-     * @param ViewModel $model
-     * @return string
      * @throws Exception
      */
-    public function subscriptionCancelProcess(array $params, ViewModel $model)
-    {
-        FilterParams::isRequired($params, 'subscriptionId');
+    public function subscriptionCancelProcess(array $params, Request $request): string {
+        FilterParams::required($params, 'subscriptionId');
 
-        $ordersService = OrdersService::instance();
-        $payPalAPIService = PayPalApiService::instance();
-        $subscriptionsService = SubscriptionsService::instance();
-        $authenticationService = AuthenticationService::instance();
+        $subService = SubscriptionsService::instance();
+        $authService = AuthenticationService::instance();
 
-        $userId = Session::getCredentials()->getUserId();
-        $subscription = $subscriptionsService->getSubscriptionById($params['subscriptionId']);
+        $creds = Session::getCredentials();
+        $userId = $creds->getUserId();
+        $subscription = $subService->findById($params['subscriptionId']);
 
-        if (empty($subscription)) {
-            throw new Exception('Invalid subscription');
-        }
+        try {
+            $googleRecaptchaHandler = new GoogleRecaptchaHandler();
+            $googleRecaptchaHandler->resolveWithRequest($request);
 
-        if ($subscription['userId'] != $userId && $subscription['gifter'] != $userId) {
-            throw new Exception('Invalid subscription owner');
-        }
-
-        if ($subscription['status'] != SubscriptionStatus::ACTIVE) {
-            throw new Exception('Invalid subscription status');
-        }
-
-        // Cancel the payment profile
-        if (!empty ($subscription ['paymentProfileId'])) {
-            $paymentProfile = $ordersService->getPaymentProfileById($subscription ['paymentProfileId']);
-            if (strcasecmp($paymentProfile ['state'], PaymentProfileStatus::ACTIVEPROFILE) === 0) {
-                $payPalAPIService->cancelPaymentProfile($subscription, $paymentProfile);
+            if (empty($subscription)) {
+                throw new Exception('Invalid subscription');
             }
+            if ($subscription['userId'] != $userId && $subscription['gifter'] != $userId) {
+                throw new Exception('Invalid subscription owner');
+            }
+            if ($subscription['status'] != SubscriptionStatus::ACTIVE) {
+                throw new Exception('Invalid subscription status');
+            }
+            if ($subscription['recurring'] == 1) {
+                $subscription = $subService->cancelSubscription($subscription, false, $userId);
+                Session::setSuccessBag('Subscription payment stopped. You can now remove the subscription.');
+            } else {
+                $subscription = $subService->cancelSubscription($subscription, true, $userId);
+                Session::setSuccessBag('Subscription removed.');
+            }
+
+            $note = $params['message'] ?? '';
+            if (!empty($message)) {
+                DiscordMessenger::send('Subscription cancelled', [
+                    'fields' => [
+                        ['title' => 'User', 'value' => DiscordMessenger::userLink($creds->getUserId(), $creds->getUsername()), 'short' => false],
+                        ['title' => 'Message', 'value' => $note, 'short' => false],
+                    ]
+                ]);
+            }
+
+            $authService->flagUserForUpdate($subscription ['userId']);
+            return "redirect: /subscription/${subscription['subscriptionId']}/cancel";
+        } catch (Exception $e) {
+            Session::setErrorBag($e->getMessage());
+            return 'redirect:/profile';
         }
-
-        if (isset($params['cancelRemainingTime']) && $params['cancelRemainingTime'] == '1') {
-            $subscription ['status'] = SubscriptionStatus::CANCELLED;
-            $subscriptionsService->updateSubscriptionState($subscription ['subscriptionId'], $subscription ['status']);
-        }
-
-        $subscription ['recurring'] = false;
-        $subscriptionsService->updateSubscriptionRecurring($subscription ['subscriptionId'], false);
-
-        $authenticationService->flagUserForUpdate($subscription ['userId']);
-
-        $model->subscription = $subscription;
-        $model->subscriptionCancelled = true;
-        return 'profile/cancelsubscription';
-    }
-
-
-    /**
-     * @Route ("/subscription/{orderId}/error")
-     * @Secure ({"USER"})
-     *
-     * @param array $params
-     */
-    public function subscriptionError(array $params, ViewModel $model)
-    {
-        FilterParams::isRequired($params, 'orderId');
-
-        // @TODO make this more solid
-        $userId = Session::getCredentials()->getUserId();
-        $ordersService = OrdersService::instance();
-        $order = $ordersService->getOrderByIdAndUserId($params ['orderId'], $userId);
-
-        if (empty ($order)) {
-            throw new Exception ('Subscription failed');
-        }
-
-        $model->order = $order;
-        $model->orderId = $params ['orderId'];
-        return 'order/ordererror';
     }
 
     /**
      * @Route ("/subscription/confirm")
-     *
-     * Create and send the order
-     *
-     * @param array $params
+     * @throws Exception
      */
-    public function subscriptionConfirm(array $params, ViewModel $model)
-    {
-        FilterParams::isRequired($params, 'subscription');
+    public function subscriptionConfirm(array $params, ViewModel $model): string {
+        try {
+            FilterParams::required($params, 'subscriptionId');
+            FilterParams::required($params, 'purchaseType');
+            FilterParams::required($params, 'quantity');
+
+            // If the user isn't logged in, save their selection and redirect to
+            // the login screen. After logging in, they're redirected back to
+            // this page.
+            if (!Session::hasRole(UserRole::USER)) {
+                $confirmUrl = '/subscription/confirm' . '?' . http_build_query([
+                    'subscriptionId' => $params['subscriptionId'],
+                    'purchaseType' => $params['purchaseType'],
+                    'quantity' => $params['quantity'],
+                    'giftee' => $params['giftee'] ?? null
+                ]);
+
+                $loginUrl = '/login' . '?' . http_build_query([
+                    'follow' => $confirmUrl
+                ]);
+
+                return "redirect: $loginUrl";
+            }
+
+            $this->validateSubscriptionParameters($params);
+        } catch (Exception $e) {
+            Session::setErrorBag($e->getMessage());
+            return 'redirect: /subscribe';
+        }
 
         $subscriptionsService = SubscriptionsService::instance();
+        $subscriptionType = $subscriptionsService->getSubscriptionType($params['subscriptionId']);
 
-        // If there is no user, save the selection, and go to the login screen
-        if (!Session::hasRole(UserRole::USER)) {
-            $url = '/subscription/confirm?subscription=' . $params ['subscription'];
-            if (isset($params ['gift']) && !empty($params ['gift'])) {
-                $url .= '&gift=' . $params ['gift'];
-            }
-            return 'redirect: /login?follow=' . urlencode($url);
-        }
+        // If this isn't a direct gift or a mass gift, we need to warn the user
+        // if they already have an active or pending subscription.
+        if ($params['purchaseType'] === SubPurchaseType::_SELF) {
+            $userId = Session::getCredentials()->getUserId();
+            $currentSubscriptions = $subscriptionsService->getUserActiveAndPendingSubscriptions($userId);
 
-        $userId = Session::getCredentials()->getUserId();
-        $subscriptionType = $subscriptionsService->getSubscriptionType($params ['subscription']);
+            if (!empty($currentSubscriptions)) {
+                $currentSubscription = $currentSubscriptions[0];
+                $currentSubType = $subscriptionsService->getSubscriptionType($currentSubscription['subscriptionType']);
 
-        if (empty($subscriptionType)) {
-            throw new Exception('Invalid subscription specified');
-        }
-
-        // If this is a gift, there is no need to check the current subscription
-        if (isset($params['gift']) && !empty($params['gift'])) {
-
-            $model->gift = $params['gift'];
-            $model->warning = new Exception('If the giftee has a subscription by the time this payment is completed the subscription will be marked as failed, but your payment will still go through.');
-
-        } else {
-
-            // Existing subscription
-            $currentSubscription = $subscriptionsService->getUserActiveSubscription($userId);
-            if (!empty ($currentSubscription)) {
-                $model->currentSubscription = $currentSubscription;
-                $model->currentSubscriptionType = $subscriptionsService->getSubscriptionType($currentSubscription ['subscriptionType']);
-
-                // Warn about identical subscription overwrite
-                if ($model->currentSubscriptionType['id'] == $subscriptionType ['id']) {
-                    $model->warning = new Exception('you are about to overwrite your existing subscription with a duplicate one.');
+                if ($currentSubscription['status'] === SubscriptionStatus::ACTIVE) {
+                    $warningMessage = "You already have a {$currentSubType['tierLabel']} subscription! You can sub again, but only your highest tier sub will be visible.";    
+                } else { // SubscriptionStatus::PENDING
+                    $warningMessage = "You already have a pending {$currentSubType['tierLabel']} subscription! Pending subs become active when their payment is processed.";
                 }
 
+                $model->warning = new Exception($warningMessage);
             }
-
         }
 
         $model->subscriptionType = $subscriptionType;
-        return 'order/orderconfirm';
+        $model->purchaseType = $params['purchaseType'];
+        $model->quantity = $params['quantity'];
+        $model->giftee = $params['giftee'] ?? null;
+        $model->title = 'Subscribe Confirm';
+        return 'subscribe/confirm';
     }
 
     /**
      * @Route ("/subscription/create")
      * @Secure ({"USER"})
-     * @Transactional
-     *
-     * Create and send the order
-     *
-     * @param array $params
+     * @HttpMethod ({"POST"})
+     * @throws Exception
+     * @throws DBALException
      */
-    public function subscriptionCreate(array $params, ViewModel $model)
-    {
-        FilterParams::isRequired($params, 'subscription');
+    public function subscriptionCreate(array $params, ViewModel $model): string {
+        try {
+            FilterParams::required($params, 'subscriptionId');
+            FilterParams::required($params, 'purchaseType');
+            FilterParams::required($params, 'quantity');
 
-        $userService = UserService::instance();
-        $subscriptionsService = SubscriptionsService::instance();
-        $ordersService = OrdersService::instance();
-        $payPalApiService = PayPalApiService::instance();
+            $this->validateSubscriptionParameters($params);
+        } catch (Exception $e) {
+            $model->title = 'Subscription Error';
+            return 'subscribe/error';
+        }
 
-        $userId = Session::getCredentials()->getUserId();
-        $subscriptionType = $subscriptionsService->getSubscriptionType($params ['subscription']);
-        $recurring = (isset ($params ['renew']) && $params ['renew'] == '1');
-        $giftReceiverUsername = (isset($params['gift']) && !empty($params['gift'])) ? $params['gift'] : null;
-        $giftReceiver = null;
+        // How the user heard of the streamer or why they're subscribing. We
+        // pass this and the broadcast message to `/subscribe/complete` via the
+        // user's session.
+        if (!empty($params['sub-note'])) {
+            Session::set('subscribeMessage', $params['sub-note']);
+        }
 
-        if (isset($params ['sub-message']) and !empty($params ['sub-message']))
-            Session::set('subMessage', mb_substr($params ['sub-message'], 0, 250));
+        if (!empty($params['sub-message'])) {
+            Session::set('broadcastMessage', $params['sub-message']);
+        }
 
         try {
+            $subscriptionType = SubscriptionsService::instance()->getSubscriptionType($params['subscriptionId']);
+            $recurring = !empty($params['recurring']) ? $params['recurring'] === '1' : false;
+            $returnUrl = Http::getBaseUrl() . '/subscription/process';
+            $cancelUrl = Http::getBaseUrl() . '/subscribe';
 
-            if (!empty($giftReceiverUsername)) {
-                // make sure the receiver is valid
-                $giftReceiver = $userService->getUserByUsername($giftReceiverUsername);
-                if (empty($giftReceiver)) {
-                    throw new Exception ('Invalid giftee (user not found)');
-                }
-                if ($userId == $giftReceiver['userId']) {
-                    throw new Exception ('Invalid giftee (cannot gift yourself)');
-                }
-                if (!$subscriptionsService->getCanUserReceiveGift($userId, $giftReceiver['userId'])) {
-                    throw new Exception ('Invalid giftee (user does not accept gifts)');
-                }
-            }
-
-            // Create NEW order
-            $order = $ordersService->createSubscriptionOrder($subscriptionType, $userId);
-
-            // Create the subscription
-            $start = Date::getDateTime();
-            $end = Date::getDateTime();
-            $end->modify('+' . $subscriptionType ['billingFrequency'] . ' ' . strtolower($subscriptionType ['billingPeriod']));
-
-            $subscription = ['userId' => $userId, 'orderId' => $order ['orderId'], 'subscriptionSource' => Config::$a ['subscriptionType'], 'subscriptionType' => $subscriptionType ['id'], 'subscriptionTier' => $subscriptionType ['tier'], 'createdDate' => $start->format('Y-m-d H:i:s'), 'endDate' => $end->format('Y-m-d H:i:s'), 'recurring' => 0, 'status' => SubscriptionStatus::_NEW];
-
-            // If this is a gift, change the user and the gifter
-            if (!empty($giftReceiver)) {
-                $subscription['userId'] = $giftReceiver['userId'];
-                $subscription['gifter'] = $userId;
-            }
-
-            // Insert subscription
-            $subscriptionId = $subscriptionsService->addSubscription($subscription);
-
-            // Add payment profile
-            $paymentProfile = null;
-            if ($recurring) {
-                $billingStartDate = Date::getDateTime(date('m/d/y'));
-                $billingStartDate->modify('+' . $subscriptionType ['billingFrequency'] . ' ' . strtolower($subscriptionType ['billingPeriod']));
-                $paymentProfile = $ordersService->createPaymentProfile($userId, $order, $subscriptionType, $billingStartDate);
-            }
-
-            $setECResponse = $payPalApiService->createECResponse('/subscription/process', $order, $subscriptionType, $recurring);
-            if (empty ($setECResponse) || $setECResponse->Ack != 'Success') {
-                throw new Exception ($setECResponse->Errors->ShortMessage);
-            }
-            return 'redirect: ' . Config::$a ['paypal'] ['api'] ['endpoint'] . urlencode($setECResponse->Token);
-
+            $token = PayPalApiService::instance()->createSubscribeECRequest(
+                $returnUrl,
+                $cancelUrl,
+                $params['purchaseType'],
+                $subscriptionType,
+                $recurring,
+                $params['quantity'],
+                $params['giftee'] ?? null
+            );
+            return 'redirect: ' . Config::$a['paypal']['endpoint_checkout'] . urlencode($token);
         } catch (Exception $e) {
-
-            if (!empty ($order)) {
-                $ordersService->updateOrderState($order ['orderId'], OrderStatus::ERROR);
-            }
-            if (!empty ($paymentProfile)) {
-                $ordersService->updatePaymentStatus($paymentProfile ['paymentId'], PaymentStatus::ERROR);
-            }
-            if (!empty ($subscriptionId)) {
-                $subscriptionsService->updateSubscriptionState($subscriptionId, SubscriptionStatus::ERROR);
-            }
-
-            $log = Application::instance()->getLogger();
-            $log->error($e->getMessage(), $order);
-            return 'redirect: /subscription/' . urlencode($order ['orderId']) . '/error';
+            Log::critical("Error creating order. {$e}");
+            return 'redirect: /subscription/error';
         }
-    }
-
-    /**
-     * @Route ("/subscription/{orderId}/complete")
-     * @Secure ({"USER"})
-     * @Transactional
-     *
-     * @param array $params
-     */
-    public function subscriptionComplete(array $params, ViewModel $model)
-    {
-        FilterParams::isRequired($params, 'orderId');
-
-        $ordersService = OrdersService::instance();
-        $subscriptionsService = SubscriptionsService::instance();
-        $userService = UserService::instance();
-
-        $userId = Session::getCredentials()->getUserId();
-
-        $order = $ordersService->getOrderByIdAndUserId($params ['orderId'], $userId);
-        if (empty ($order)) {
-            throw new Exception (sprintf('Invalid order record orderId:%s userId:%s', $params ['orderId'], $userId));
-        }
-
-        $subscription = $subscriptionsService->getSubscriptionByOrderId($order ['orderId']);
-        // Make sure the order is assigned to this user, or at least they are the gifter
-        if (empty ($subscription) || ($subscription['userId'] != $userId && $subscription['gifter'] != $userId)) {
-            throw new Exception ('Invalid subscription record');
-        }
-
-        // Load the giftee
-        if (!empty($subscription['gifter'])) {
-            $giftee = $userService->getUserById($subscription['userId']);
-            $model->giftee = $giftee;
-        }
-
-        $subscriptionType = $subscriptionsService->getSubscriptionType($subscription ['subscriptionType']);
-        $paymentProfile = $ordersService->getPaymentProfileByOrderId($order ['orderId']);
-
-        // Show the order complete screen
-        $model->order = $order;
-        $model->subscription = $subscription;
-        $model->subscriptionType = $subscriptionType;
-        $model->paymentProfile = $paymentProfile;
-        return 'order/ordercomplete';
     }
 
     /**
      * @Route ("/subscription/process")
      * @Secure ({"USER"})
-     * @Transactional
      *
-     * We were redirected here from PayPal after the buyer approved/cancelled the payment
+     * We were redirected here from PayPal after the buyer approved the payment
      *
-     * @param array $params
+     * @throws ConnectionException
+     * @throws DBALException
+     * @throws Exception
      */
-    public function subscriptionProcess(array $params, ViewModel $model)
-    {
+    public function subscriptionProcess(array $params): string {
+        try {
+            // No `PayerId` is provided if there was an issue setting up
+            // payment.
+            FilterParams::required($params, 'PayerID');
 
-        FilterParams::isRequired($params, 'orderId');
-        FilterParams::isRequired($params, 'token');
-        FilterParams::isThere($params, 'success');
+            // Retrieve checkout info and complete the transaction.
+            $payPalApiService = PayPalApiService::instance();
+            $checkoutResponse = $payPalApiService->retrieveCheckoutInfo($params['token']);
+            $doECResponse = $payPalApiService->completeSubscribeECTransaction($checkoutResponse);
+            $subInfo = $payPalApiService->extractSubscriptionInfoFromCheckoutResponse($checkoutResponse);
+            $payments = $payPalApiService->getCheckoutResponsePayments($doECResponse);
 
-        $ordersService = OrdersService::instance();
-        $userService = UserService::instance();
-        $subscriptionsService = SubscriptionsService::instance();
-        $payPalApiService = PayPalApiService::instance();
-        $chatIntegrationService = ChatIntegrationService::instance();
-        $authenticationService = AuthenticationService::instance();
+            // If there are no payments, the transaction is "pending".
+            $paymentSuccessful = count($payments) > 0;
 
-        $userId = Session::getCredentials()->getUserId();
+            $subscriptionType = SubscriptionsService::instance()->getSubscriptionType($subInfo['subscriptionId']);
+            if (empty($subscriptionType)) {
+                throw new Exception('Invalid subscription type.');
+            }
 
-        // Get the order
-        $order = $ordersService->getOrderByIdAndUserId($params ['orderId'], $userId);
-        if (empty ($order) || strcasecmp($order ['state'], OrderStatus::_NEW) !== 0) {
-            throw new Exception ('Invalid order record');
+            // The logged in user is the one buying the sub.
+            $userService = UserService::instance();
+            $userId = Session::getCredentials()->getUserId();
+            $buyingUser = $userService->getUserById($userId);
+
+            $db = Application::getDbConn();
+            $dbTransactionInProgress = $db->beginTransaction();
+
+            $paymentIds = [];
+            if (count($payments) > 0) {
+                foreach ($payments as $payment) {
+                    $payment['payerId'] = $params['PayerID'];
+                    $paymentId = OrdersService::instance()->addPayment($payment);
+                    $paymentIds[] = $paymentId;
+                }
+            }
+
+            $receivingUsers = [];
+            if ($subInfo['purchaseType'] === SubPurchaseType::MASS_GIFT) {
+                $receivingUsers = $this->pickMassGiftWinnersFromChat($subInfo['quantity'], $buyingUser);
+            } else {
+                $receivingUsers[] = !empty($subInfo['giftee']) ? $userService->getUserByUsername($subInfo['giftee']) : $buyingUser;
+            }
+
+            foreach ($receivingUsers as $receivingUser) {
+                $this->createNewSubscription(
+                    $subscriptionType,
+                    $receivingUser,
+                    $buyingUser,
+                    $paymentIds,
+                    $params['token'],
+                    boolval($subInfo['recurring'] ?? '0')
+                );
+            }
+
+            $db->commit();
+        } catch (Exception $e) {
+            if (!empty($db) && $dbTransactionInProgress ?? false) {
+                $db->rollBack();
+            }
+
+            Log::critical("Error processing subscription. {$e}");
+            return 'redirect: /subscription/error';
         }
 
-        try {
+        $broadcastMessage = Session::getAndRemove('broadcastMessage');
+        $broadcastMessage = mb_substr(trim($broadcastMessage), 0, 250);
 
-            // If we got a failed response URL
-            if ($params ['success'] == '0' || $params ['success'] == 'false' || $params ['success'] === false) {
-                throw new Exception ('Order request failed');
+        $subscribeMessage = Session::getAndRemove('subscribeMessage');
+        $subscribeMessage = mb_substr(trim($subscribeMessage), 0, 250);
+
+        // Mass gifts have an additional alert. We only issue alerts if the payment was successful.
+        if ($paymentSuccessful && $subInfo['purchaseType'] === SubPurchaseType::MASS_GIFT) {
+            $redisService = ChatRedisService::instance();
+
+            $subWord = $subInfo['quantity'] == 1 ? 'sub' : 'subs';
+            $redisService->sendBroadcast("{$buyingUser['username']} gifted {$subInfo['quantity']} {$subscriptionType['tierLabel']} {$subWord} to the community!");
+            if ($broadcastMessage !== '') {
+                $redisService->sendBroadcast("{$buyingUser['username']} said... $broadcastMessage");
             }
 
-            // Get the subscription from the order
-            $orderSubscription = $subscriptionsService->getSubscriptionByOrderId($order ['orderId']);
-            $subscriptionUser = $userService->getUserById($orderSubscription['userId']);
+            StreamLabsService::instance()->sendMassGiftAlert(
+                $subscriptionType,
+                $broadcastMessage,
+                $buyingUser['username'],
+                $subInfo['quantity']
+            );
 
-            // Make sure the subscription is valid
-            if (empty ($orderSubscription)) {
-                throw new Exception ('Invalid order subscription');
+            // Broadcast messages for mass gifts are printed with the mass gift
+            // notification broadcast. We empty the value to ensure it isn't
+            // printed for the direct gift alerts that follow.
+            $broadcastMessage = '';
+        }
+
+        // Log the subscription event in Discord.
+        if ($paymentSuccessful && $subscribeMessage !== '') {
+            DiscordMessenger::send('New subscriber', [
+                'fields' => [
+                    ['title' => 'User', 'value' => DiscordMessenger::userLink($buyingUser['userId'], $buyingUser['username']), 'short' => false],
+                    ['title' => 'Message', 'value' => $subscribeMessage, 'short' => false],
+                ]
+            ]);
+        }
+
+        if ($paymentSuccessful) {
+            foreach ($receivingUsers as $receivingUser) {
+                $this->performPostSubscriptionActions($subscriptionType, $receivingUser, $buyingUser, $broadcastMessage);
             }
+        }
 
-            // Make sure the subscription is either owned or gifted by the user
-            if ($subscriptionUser['userId'] != $userId && $orderSubscription['gifter'] != $userId) {
-                throw new Exception ('Invalid order subscription');
-            }
+        // We pass the token rather than the transaction ID to handle scenarios
+        // where the payment is still pending and there is no transaction ID. A
+        // token expires after three hours.
+        return "redirect: /subscription/complete?token={$params['token']}";
+    }
 
-            $subscriptionType = $subscriptionsService->getSubscriptionType($orderSubscription ['subscriptionType']);
-            $paymentProfile = $ordersService->getPaymentProfileByOrderId($order ['orderId']);
+    /**
+     * @Route ("/subscription/complete")
+     * @Secure ({"USER"})
+     * @throws Exception
+     */
+    public function subscriptionComplete(array $params, ViewModel $model): string {
+        FilterParams::required($params, 'token');
 
-            // Get the checkout info
-            $ecResponse = $payPalApiService->retrieveCheckoutInfo($params ['token']);
-            if (!isset ($ecResponse) || $ecResponse->Ack != 'Success') {
-                throw new Exception ('Failed to retrieve express checkout details');
-            }
+        $payPalApiService = PayPalApiService::instance();
+        $checkoutResponse = $payPalApiService->retrieveCheckoutInfo($params['token']);
+        $subInfo = $payPalApiService->extractSubscriptionInfoFromCheckoutResponse($checkoutResponse);
+        $checkoutDetails = $checkoutResponse->GetExpressCheckoutDetailsResponseDetails;
+        $paymentDetails = $checkoutDetails->PaymentDetails[0];
 
-            // Moved this down here, as if the order status is error, the payerID is not returned
-            FilterParams::isRequired($params, 'PayerID');
+        $subscriptionType = SubscriptionsService::instance()->getSubscriptionType($subInfo['subscriptionId']);
 
-            // Point of no return - we only every want a person to get here if their order was a successful sequence
-            Session::set('token');
-            Session::set('orderId');
+        $model->title = 'Subscription Complete';
+        // There is no `TransactionId` if the transaction is pending.
+        $model->transactionId = $paymentDetails->TransactionId ?? null;
+        $model->purchaseType = $subInfo['purchaseType'];
+        $model->quantity = $subInfo['quantity'];
+        $model->recurring = $subInfo['recurring'];
+        $model->giftee = $subInfo['giftee'] ?? null;
+        $model->orderTotal = $paymentDetails->OrderTotal->value;
+        $model->subscriptionType = $subscriptionType;
 
-            // Recurring payment
-            if (!empty ($paymentProfile)) {
-                $createRPProfileResponse = $payPalApiService->createRecurringPaymentProfile($paymentProfile, $params ['token'], $subscriptionType);
-                if (!isset ($createRPProfileResponse) || $createRPProfileResponse->Ack != 'Success') {
-                    throw new Exception ('Failed to create recurring payment request');
+        return 'subscribe/complete';
+    }
+
+    /**
+     * @Route ("/subscription/error")
+     * @Secure ({"USER"})
+     * @throws Exception
+     */
+    public function subscriptionError(array $params, ViewModel $model): string {
+        $model->title = 'Subscription Error';
+        return 'subscribe/error';
+    }
+
+    /**
+     * @Route ("/api/info/giftcheck")
+     * @Secure ({"USER"})
+     * @ResponseBody
+     * @throws Exception
+     */
+    public function giftCheckUser(array $params): array {
+        FilterParams::required($params, 's');
+        $userService = UserService::instance();
+        $subscriptionService = SubscriptionsService::instance();
+        $userId = Session::getCredentials()->getUserId();
+        $data = [
+            'valid' => false,
+            'cangift' => false,
+            'username' => $params ['s']
+        ];
+        $user = $userService->getUserByUsername($params ['s']);
+        if (!empty($user)) {
+            $data['cangift'] = $subscriptionService->canUserReceiveGift($userId, $user['userId']);
+            $data['valid'] = true;
+        }
+        return $data;
+    }
+
+    /**
+     * Validate the parameters in a subscription request.
+     *
+     * @throws Exception
+     */
+    private function validateSubscriptionParameters(array $params) {
+        $subscriptionsService = SubscriptionsService::instance();
+        $subscriptionType = $subscriptionsService->getSubscriptionType($params['subscriptionId']);
+        if (empty($subscriptionType)) {
+            throw new Exception('Invalid subscription type.');
+        }
+
+        switch ($params['purchaseType']) {
+            case SubPurchaseType::_SELF:
+                if ($params['quantity'] != 1) {
+                    throw new Exception('You can only buy one sub for yourself at a time.');
                 }
-                $paymentProfileId = $createRPProfileResponse->CreateRecurringPaymentsProfileResponseDetails->ProfileID;
-                $paymentStatus = $createRPProfileResponse->CreateRecurringPaymentsProfileResponseDetails->ProfileStatus;
-                if (empty ($paymentProfileId)) {
-                    throw new Exception ('Invalid recurring payment profileId returned from Paypal');
+                break;
+            case SubPurchaseType::DIRECT_GIFT:
+                FilterParams::required($params, 'giftee');
+
+                $userId = Session::getCredentials()->getUserId();
+                $giftReceiver = UserService::instance()->getUserByUsername($params['giftee']);
+
+                if ($params['quantity'] != 1) {
+                    throw new Exception('You can only gift one sub to a specific user at a time.');
+                } else if (empty($giftReceiver)) {
+                    throw new Exception('Invalid giftee: no such user exists.');
+                } else if ($giftReceiver['userId'] === $userId) {
+                    throw new Exception('Invalid giftee: you cannot gift yourself a sub.');
+                } else if (!$subscriptionsService->canUserReceiveGift($userId, $giftReceiver['userId'])) {
+                    throw new Exception('Invalid giftee: this user can\'t accept gift subs.');
                 }
-                // Set the payment profile to active, and paymetProfileId
-                $ordersService->updatePaymentProfileId($paymentProfile ['profileId'], $paymentProfileId, $paymentStatus);
-
-                // Update the payment profile
-                $subscriptionsService->updateSubscriptionPaymentProfile($orderSubscription ['subscriptionId'], $paymentProfile ['profileId'], true);
-            }
-
-            // Complete the checkout
-            $DoECResponse = $payPalApiService->getECPaymentResponse($params ['PayerID'], $params ['token'], $order);
-            if (isset ($DoECResponse) && $DoECResponse->Ack == 'Success') {
-                if (isset ($DoECResponse->DoExpressCheckoutPaymentResponseDetails->PaymentInfo)) {
-                    $payPalApiService->recordECPayments($DoECResponse, $params ['PayerID'], $order);
-                    $ordersService->updateOrderState($order ['orderId'], $order ['state']);
-                } else {
-                    throw new Exception ('No payments for express checkout order');
+                break;
+            case SubPurchaseType::MASS_GIFT:
+                $isRecurring = boolval($params['recurring'] ?? '0');
+                if ($params['quantity'] > 100 || $params['quantity'] < 1) {
+                    throw new Exception('You can only mass gift between 1 and 100 subs.');
+                } else if ($isRecurring) {
+                    throw new Exception('A mass gift cannot be recurring.');
                 }
-            } else {
-                throw new Exception ($DoECResponse->Errors [0]->LongMessage);
-            }
-
-            // If the user already has a subscription and ONLY if this subscription was NOT a gift
-            if (!isset($orderSubscription ['gifter']) || empty($orderSubscription ['gifter'])) {
-
-                $activeSubscription = $subscriptionsService->getUserActiveSubscription($subscriptionUser['userId']);
-                if (!empty ($activeSubscription)) {
-
-                    // Cancel any attached payment profiles
-                    $ordersService = OrdersService::instance();
-                    $paymentProfile = $ordersService->getPaymentProfileById($activeSubscription ['paymentProfileId']);
-                    if (!empty ($paymentProfile)) {
-                        $payPalApiService->cancelPaymentProfile($activeSubscription, $paymentProfile);
-                        $subscriptionsService->updateSubscriptionRecurring($activeSubscription ['subscriptionId'], false);
-                    }
-
-                    // Cancel the active subscription
-                    $subscriptionsService->updateSubscriptionState($activeSubscription ['subscriptionId'], SubscriptionStatus::CANCELLED);
-                }
-            }
-
-            // Check if this is a gift, check that the giftee is still eligable
-            if (!empty($orderSubscription['gifter']) && !$subscriptionsService->getCanUserReceiveGift($userId, $subscriptionUser['userId'])) {
-
-                // Update the state to ERROR and log a critical error
-                Application::instance()->getLogger()->critical('Duplicate subscription attempt, Gifter: %d GifteeId: %d, OrderId: %d', $userId, $subscriptionUser['userId'], $order ['orderId']);
-                $subscriptionsService->updateSubscriptionState($orderSubscription ['subscriptionId'], SubscriptionStatus::ERROR);
-
-            } else {
-
-                // Unban the user if a ban is found
-                $ban = $userService->getUserActiveBan($subscriptionUser['userId']);
-                // only unban the user if the ban is non-permanent or the tier of the subscription is >= 2
-                // we unban the user if no ban is found because it also unmutes
-                if (empty ($ban) or (!empty($ban ['endtimestamp']) or $orderSubscription['subscriptionTier'] >= 2)) {
-                    $chatIntegrationService->sendUnban($subscriptionUser['userId']);
-                }
-
-                // Activate the subscription (state)
-                $subscriptionsService->updateSubscriptionState($orderSubscription ['subscriptionId'], SubscriptionStatus::ACTIVE);
-
-                // Flag the user for 'update'
-                $authenticationService->flagUserForUpdate($subscriptionUser['userId']);
-
-                // Random emote
-                $randomEmote = Config::$a['chat']['customemotes'][array_rand(Config::$a['chat']['customemotes'])];
-
-                // Broadcast
-                if (!empty($orderSubscription['gifter'])) {
-                    $gifter = $userService->getUserById($orderSubscription['gifter']);
-                    $userName = $gifter['username'];
-                    $chatIntegrationService->sendBroadcast(sprintf('%s is now a %s subscriber! gifted by %s %s', $subscriptionUser['username'], $subscriptionType ['tierLabel'], $gifter['username'], $randomEmote));
-                } else {
-                    $userName = $subscriptionUser['username'];
-                    $chatIntegrationService->sendBroadcast(sprintf('%s is now a %s subscriber! %s', $subscriptionUser['username'], $subscriptionType ['tierLabel'], $randomEmote));
-                }
-
-                // Get the subscription message, and remove it from the session
-                $subMessage = Session::set('subMessage');
-                if (!empty($subMessage)) {
-                    $chatIntegrationService->sendBroadcast(sprintf('%s: %s', $userName, $subMessage));
-                }
-
-            }
-
-            // Redirect to completion page
-            return 'redirect: /subscription/' . urlencode($order ['orderId']) . '/complete';
-
-        } catch (Exception $e) {
-
-            if (!empty ($order))
-                $ordersService->updateOrderState($order ['orderId'], OrderStatus::ERROR);
-            if (!empty ($paymentProfile))
-                $ordersService->updatePaymentStatus($paymentProfile ['paymentId'], PaymentStatus::ERROR);
-            if (!empty ($orderSubscription))
-                $subscriptionsService->updateSubscriptionState($orderSubscription['subscriptionId'], SubscriptionStatus::ERROR);
-
-            $log = Application::instance()->getLogger();
-            $log->error($e->getMessage(), $order);
-
-            return 'redirect: /subscription/' . urlencode($order ['orderId']) . '/error';
+                break;
+            default:
+                throw new Exception('Invalid sub purchase type.');
         }
     }
 
     /**
-     * Check if a user can receive a gift
-     * Returns JSON
-     *
-     * @Route ("/gift/check")
-     * @Secure ({"USER"})
-     *
-     * @param array $params
+     * @throws Exception
      */
-    public function giftCheckUser(array $params, ViewModel $model)
-    {
-        FilterParams::isRequired($params, 's');
+    private function createNewSubscription(array $subscriptionType, array $receivingUser, array $buyingUser, array $paymentIds, string $token, bool $recurring = false) {
+        $subscriptionsService = SubscriptionsService::instance();
+        $payPalApiService = PayPalApiService::instance();
+        $ordersService = OrdersService::instance();
 
-        $userService = UserService::instance();
-        $subscriptionService = SubscriptionsService::instance();
-        $userId = Session::getCredentials()->getUserId();
+        // Create a new subscription.
+        $startDate = Date::getDateTime();
+        $endDate = Date::getDateTime();
+        $endDate->modify("+{$subscriptionType['billingFrequency']} {$subscriptionType['billingPeriod']}");
 
-        $data = ['valid' => false, 'cangift' => false, 'username' => $params ['s']];
+        $subscription = [
+            'userId'             => $receivingUser['userId'],
+            'gifter'             => $receivingUser['userId'] !== $buyingUser['userId'] ? $buyingUser['userId'] : null,
+            'subscriptionSource' => Config::$a['subscriptionType'],
+            'subscriptionType'   => $subscriptionType['id'],
+            'subscriptionTier'   => $subscriptionType['tier'],
+            'createdDate'        => $startDate->format('Y-m-d H:i:s'),
+            'endDate'            => $endDate->format('Y-m-d H:i:s'),
+            'recurring'          => intval($recurring),
+            'status'             => SubscriptionStatus::_NEW
+        ];
+        $subscription['subscriptionId'] = $subscriptionsService->addSubscription($subscription);
 
-        $user = $userService->getUserByUsername($params ['s']);
-        if (!empty($user)) {
-            $data['cangift'] = $subscriptionService->getCanUserReceiveGift($userId, $user['userId'], null);
-            $data['valid'] = true;
+        // If there are no payments, assume the transaction is pending. We mark
+        // the sub as pending until we receive an IPN from PayPal.
+        if (!empty($paymentIds)) {
+            $subscription['status'] = SubscriptionStatus::ACTIVE;
+            foreach ($paymentIds as $paymentId) {
+                $ordersService->addPurchaseOfSubscription($paymentId, $subscription['subscriptionId']);
+            }
+        } else {
+            $subscription['status'] = SubscriptionStatus::PENDING;
         }
 
-        $response = new Response (Http::STATUS_OK);
-        $response->addHeader(Http::HEADER_CONTENTTYPE, MimeType::JSON);
-        $response->setBody(json_encode($data));
-        return $response;
+        // Create a recurring payment profile for recurring subs.
+        if ($recurring) {
+            $startPaymentDate = $startDate;
+            // The next payment date is one day before the sub expires.
+            $nextPaymentDate = (clone $endDate)->modify('-1 day');
+            $reference = "{$receivingUser['userId']}-{$subscription['subscriptionId']}";
+
+            $paymentProfileId = $payPalApiService->createSubscriptionPaymentProfile(
+                $token,
+                $reference,
+                $receivingUser['username'],
+                $nextPaymentDate,
+                $subscriptionType
+            );
+            if (empty($paymentProfileId)) {
+                throw new Exception('Invalid recurring payment profile ID returned from PayPal.');
+            }
+
+            $subscription['paymentStatus'] = PaymentStatus::ACTIVE;
+            $subscription['paymentProfileId'] = $paymentProfileId;
+            $subscription['billingStartDate'] = $startPaymentDate->format('Y-m-d H:i:s');
+            $subscription['billingNextDate'] = $nextPaymentDate->format('Y-m-d H:i:s');
+        }
+
+        $subscriptionsService->updateSubscription([
+            'subscriptionId' => $subscription['subscriptionId'],
+            'paymentStatus' => $subscription['paymentStatus'] ?? null,
+            'paymentProfileId' => $subscription['paymentProfileId'] ?? null,
+            'billingStartDate' => $subscription['billingStartDate'] ?? null,
+            'billingNextDate' => $subscription['billingNextDate'] ?? null,
+            'status' => $subscription['status']
+        ]);
     }
 
+    /**
+     * Unban the newly-subscribed user and display a sub alert in chat.
+     */
+    private function performPostSubscriptionActions(array $subscriptionType, array $receivingUser, array $buyingUser, string $broadcastMessage) {
+        $redisService = ChatRedisService::instance();
+
+        // Unban/unmute the newly-subscribed user.
+        try {
+            $chatBanService = ChatBanService::instance();
+            $ban = $chatBanService->getUserActiveBan($receivingUser['userId']);
+            if (empty($ban) || !$chatBanService->isPermanentBan($ban)) {
+                $redisService->sendUnbanAndUnmute($receivingUser['userId']);
+            }
+        } catch (Exception $e) {
+            Log::error('Error unbanning/unmuting user. ', $e->getMessage());
+        }
+
+        // Broadcast the subscription in chat and on stream.
+        if ($receivingUser['userId'] !== $buyingUser['userId']) {
+            $redisService->sendBroadcast("{$buyingUser['username']} gifted {$receivingUser['username']} a {$subscriptionType['tierLabel']} subscription!");
+            if ($broadcastMessage !== '') {
+                $redisService->sendBroadcast("{$buyingUser['username']} said... $broadcastMessage");
+            }
+
+            StreamLabsService::instance()->sendDirectGiftAlert(
+                $subscriptionType,
+                $broadcastMessage,
+                $buyingUser['username'],
+                $receivingUser['username']
+            );
+        } else {
+            $redisService->sendBroadcast("{$receivingUser['username']} is now a {$subscriptionType['tierLabel']} subscriber!");
+            if ($broadcastMessage !== '') {
+                $redisService->sendBroadcast("{$receivingUser['username']} said... $broadcastMessage");
+            }
+
+            StreamLabsService::instance()->sendSubAlert(
+                $subscriptionType,
+                $broadcastMessage,
+                $receivingUser['username']
+            );
+        }
+
+        AuthenticationService::instance()->flagUserForUpdate($receivingUser['userId']);
+    }
+
+    /**
+     * Returns an array of random users as winners of the gift subs. Only those
+     * who accept gift subs and aren't currently subbed can qualify. If there is
+     * an insufficient number of qualifying users among those connected to chat,
+     * we pull from users who aren't in chat until we have enough.
+     */
+    private function pickMassGiftWinnersFromChat(int $quantity, array $buyingUser): array {
+        $connectedUsers = ChatRedisService::instance()->getChatConnectedUsers();
+
+        // Users who have the `subscriber` flair are already subscribed and
+        // don't qualify. Exclude the buyer because they can't gift themselves a
+        // sub.
+        $qualifiedUsers = array_filter(
+            $connectedUsers,
+            function($user) use ($buyingUser) {
+                return $user['nick'] !== $buyingUser['username'] && !in_array(UserFeature::SUBSCRIBER, $user['features']);
+            }
+        );
+        $qualifiedUsernames = array_map(function($user) { return $user['nick']; }, $qualifiedUsers);
+        $giftableUsers = SubscriptionsService::instance()->findGiftableUsersByUsernames($qualifiedUsernames);
+
+        shuffle($giftableUsers);
+        $winners = array_slice($giftableUsers, 0, $quantity);
+
+        // If there aren't enough winners, we pull giftable, recently-modified
+        // users who aren't in chat until there are.
+        if (count($winners) < $quantity) {
+            $numberNeeded = $quantity - count($winners);
+
+            // Exclude users that already won.
+            $userIdsToExclude = array_map(function($user) { return $user['userId']; }, $winners);
+            $userIdsToExclude[] = $buyingUser['userId'];
+
+            $moreWinners = SubscriptionsService::instance()->findRecentlyModifiedGiftableUsers($numberNeeded, $userIdsToExclude);
+            $winners = array_merge($winners, $moreWinners);
+        }
+
+        // If there still aren't enough winners, then nearly every registered
+        // user must be a sub. Pop open a bottle of champagne to celebrate the
+        // streamer's success, process the mass gift anyway, and apologize to
+        // the buyer/issue a refund if they notice they got scamazed.
+        if (count($winners) < $quantity) {
+            Log::critical(sprintf(
+                '%s (ID: %d) mass gifted %d subs, but only %d qualifying recipients were found.',
+                $buyingUser['username'],
+                $buyingUser['userId'],
+                $quantity,
+                count($winners)
+            ));
+        }
+
+        return $winners;
+    }
 }

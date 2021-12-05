@@ -1,90 +1,110 @@
 <?php
-declare(strict_types=1);
-
 namespace Destiny\Reddit;
 
-use Destiny\Common\Authentication\AuthenticationCredentials;
-use Destiny\Common\Authentication\AuthenticationRedirectionFilter;
+use Destiny\Common\Authentication\AbstractAuthHandler;
+use Destiny\Common\Authentication\AuthProvider;
+use Destiny\Common\Authentication\OAuthResponse;
 use Destiny\Common\Config;
 use Destiny\Common\Exception;
-use OAuth2\Client;
+use Destiny\Common\Utils\FilterParams;
+use Destiny\Common\Utils\Http;
+use GuzzleHttp\Exception\RequestException;
 
-class RedditAuthHandler
-{
+/**
+ * @method static RedditAuthHandler instance()
+ */
+class RedditAuthHandler extends AbstractAuthHandler {
+
+    private $apiBase = 'https://ssl.reddit.com/api/v1';
+    private $authBase = 'https://oauth.reddit.com/api/v1';
+    public $authProvider = AuthProvider::REDDIT;
+    public $userProfileBaseUrl = 'https://www.reddit.com/u';
 
     /**
-     * The current auth type
-     *
-     * @var string
+     * @return string
      */
-    protected $authProvider = 'reddit';
-
-    /**
-     * Redirects the user to the auth provider
-     *
-     * @return void
-     */
-    public function getAuthenticationUrl()
-    {
-        $authConf = Config::$a ['oauth'] ['providers'] [$this->authProvider];
-        $callback = sprintf(Config::$a ['oauth'] ['callback'], $this->authProvider);
-        $client = new Client ($authConf ['clientId'], $authConf ['clientSecret'], Client::AUTH_TYPE_AUTHORIZATION_BASIC);
-        return $client->getAuthenticationUrl('https://ssl.reddit.com/api/v1/authorize', $callback, ['scope' => 'identity', 'state' => md5(time() . 'eFdcSA_')]);
+    function getAuthorizationUrl($scope = ['identity'], $claims = ''): string {
+        $conf = $this->getAuthProviderConf();
+        return "$this->apiBase/authorize?" . http_build_query([
+                'response_type' => 'code',
+                'scope' => join(' ', $scope),
+                'state' => md5(time() . 'eFdcSA_'),
+                'client_id' => $conf['client_id'],
+                'redirect_uri' => $conf['redirect_uri']
+            ], null, '&');
     }
 
     /**
-     * @param array $params
      * @throws Exception
      */
-    public function authenticate(array $params)
-    {
-        if (!isset ($params ['code']) || empty ($params ['code'])) {
-            throw new Exception ('Authentication failed, invalid or empty code.');
+    function getToken(array $params): array {
+        FilterParams::required($params, 'code');
+        $conf = $this->getAuthProviderConf();
+        $client = $this->getHttpClient();
+        try {
+            $response = $client->post("$this->apiBase/access_token", [
+                'headers' => [
+                    'User-Agent' => Config::userAgent(),
+                    'Authorization' => 'Basic ' . base64_encode($conf['client_id']. ':' .$conf['client_secret'])
+                ],
+                'form_params' => [
+                    'grant_type' => 'authorization_code',
+                    'client_id' => $conf['client_id'],
+                    'redirect_uri' => $conf['redirect_uri'],
+                    'code' => $params['code']
+                ],
+                'http_errors'=> true
+            ]);
+
+            $data = json_decode((string)$response->getBody(), true);
+            FilterParams::required($data, 'access_token');
+            return $data;
+        } catch (RequestException $e) {
+            throw new Exception('Failed to get Reddit auth token.', $e);
         }
-
-        $oAuthConf = Config::$a ['oauth'] ['providers'] [$this->authProvider];
-        $client = new Client ($oAuthConf ['clientId'], $oAuthConf ['clientSecret'], Client::AUTH_TYPE_AUTHORIZATION_BASIC);
-        $client->setAccessTokenType(Client::ACCESS_TOKEN_BEARER);
-        $response = $client->getAccessToken('https://ssl.reddit.com/api/v1/access_token', 'authorization_code', ['redirect_uri' => sprintf(Config::$a ['oauth'] ['callback'], $this->authProvider), 'code' => $params ['code']]);
-
-        if (empty ($response) || isset ($response ['error']))
-            throw new Exception ('Invalid access_token response');
-
-        if (!isset ($response ['result']) || empty ($response ['result']) || !isset ($response ['result'] ['access_token']))
-            throw new Exception ('Failed request for access token');
-
-        $client->setAccessToken($response ['result'] ['access_token']);
-
-        // Reddit requires a User-Agent
-        $info = $client->fetch('https://oauth.reddit.com/api/v1/me.json', [], 'GET', ['User-Agent' => 'destiny.gg/' . Config::version()]);
-
-        if (empty ($info ['result']) || isset ($info ['error']))
-            throw new Exception ('Invalid user details response');
-
-        $authCreds = $this->getAuthCredentials($params ['code'], $info ['result']);
-        $authCredHandler = new AuthenticationRedirectionFilter ();
-        return $authCredHandler->execute($authCreds);
     }
 
     /**
-     * Build a standard auth array from custom data array from api response
-     *
-     * @param string $code
-     * @param array $data
-     * @return AuthenticationCredentials
+     * @throws Exception
      */
-    private function getAuthCredentials($code, array $data)
-    {
-        if (empty ($data) || !isset ($data ['id']) || empty ($data ['id'])) {
-            throw new Exception ('Authorization failed, invalid user data');
+    private function getUserInfo(string $accessToken): array {
+        $client = $this->getHttpClient();
+        $response = $client->get("$this->authBase/me.json", [
+            'headers' => [
+                'User-Agent' => Config::userAgent(),
+                'Authorization' => "bearer $accessToken"
+            ]
+        ]);
+        if ($response->getStatusCode() == Http::STATUS_OK) {
+            return json_decode((string)$response->getBody(), true);
         }
-        $arr = [];
-        $arr ['authProvider'] = $this->authProvider;
-        $arr ['authCode'] = $code;
-        $arr ['authId'] = $data ['id'];
-        $arr ['authDetail'] = $data ['name'];
-        $arr ['username'] = $data ['name'];
-        $arr ['email'] = '';
-        return new AuthenticationCredentials ($arr);
+        throw new Exception("Failed to retrieve user info.");
     }
+
+    /**
+     * @throws Exception
+     */
+    function mapTokenResponse(array $token): OAuthResponse {
+        $data = $this->getUserInfo($token['access_token']);
+        FilterParams::required($data, 'id');
+        return new OAuthResponse([
+            'accessToken' => $token['access_token'],
+            'refreshToken' => $token['refresh_token'] ?? '',
+            'authProvider' => $this->authProvider,
+            'username' => $data['name'] ?? '',
+            'authId' => (string) $data['id'],
+            'authDetail' => $data['name'] ?? '',
+            'authEmail' => '',
+            'verified' => boolval($data['has_verified_email'] ?? false),
+        ]);
+    }
+
+    /**
+     * @throws Exception
+     */
+    function renewToken(string $refreshToken): array {
+        throw new Exception("Not implemented");
+        // TODO Implement
+    }
+
 }

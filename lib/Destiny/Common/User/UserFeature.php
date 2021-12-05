@@ -1,24 +1,25 @@
 <?php
-declare(strict_types=1);
-
 namespace Destiny\Common\User;
 
-abstract class UserFeature
-{
+abstract class UserFeature {
+    
+    const SUBSCRIBER = 'subscriber';
+    const SUBSCRIBER_TWITCH = 'flair9';
+    const SUBSCRIBERT1 = 'flair13';
+    const SUBSCRIBERT2 = 'flair1';
+    const SUBSCRIBERT3 = 'flair3';
+    const SUBSCRIBERT4 = 'flair8';
+    const DGGBDAY = 'flair15';
+    const MINECRAFTVIP = 'flair14';
 
-    public const PROTECT = 'protected';
-    public const SUBSCRIBER = 'subscriber';
-    public const SUBSCRIBERT2 = 'flair1';
-    public const SUBSCRIBERT3 = 'flair3';
-    public const SUBSCRIBERT4 = 'flair8';
-    public const VIP = 'vip';
-    public const MODERATOR = 'moderator';
-    public const ADMIN = 'admin';
-    public const BOT = 'bot';
-    public const NOTABLE = 'flair2';
-    public const TRUSTED = 'flair4';
-    public const CONTRIBUTOR = 'flair5';
-    public const COMPCHALLENGE = 'flair6';
-    public const EVENOTABLE = 'flair7';
+    public static $UNASSIGNABLE = [
+        self::SUBSCRIBER,
+        self::SUBSCRIBER_TWITCH,
+        self::SUBSCRIBERT1,
+        self::SUBSCRIBERT2,
+        self::SUBSCRIBERT3,
+        self::SUBSCRIBERT4,
+        self::DGGBDAY,
+    ];
 
 }

@@ -1,6 +1,4 @@
 <?php
-declare(strict_types=1);
-
 namespace Destiny\Common;
 
 use Iterator;
@@ -8,36 +6,42 @@ use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use RecursiveRegexIterator;
 use ReflectionClass;
+use ReflectionException;
 use RegexIterator;
 use SplFileInfo;
 
-/*
+/**
  * Reads all files in a folder and finds the .php ones with classes in them
  */
-
-class DirectoryClassIterator implements Iterator
-{
-
+class DirectoryClassIterator implements Iterator {
+    
+    private $position = 0;
+    
     /**
-     * The position of the iterator
-     * @var int
+     * @var ReflectionClass[]
      */
-    private $position;
-
+    private $array = [];
+    
     /**
-     * List of classes
-     * @var array<ReflectionClass>
+     * @var string
      */
-    private $array;
+    private $base;
+    
+    /**
+     * @var string
+     */
+    private $path;
 
     /**
      *
      * @param string $base
      * @param string $path
+     * @throws ReflectionException
      */
-    public function __construct(private $base, private $path)
-    {
-        $this->array = $this->getClasses();
+    public function __construct($base, $path) {
+        $this->base = $base;
+        $this->path = $path;
+        $this->array = $this->getClasses ();
         $this->position = 0;
     }
 
@@ -45,27 +49,25 @@ class DirectoryClassIterator implements Iterator
      * Ported from Doctrine class
      * Load all files in a folder
      *
-     * @return array<ReflectionClass>
+     * @return ReflectionClass[]
+     * @throws ReflectionException
      */
-    private function getClasses()
-    {
-        $files = self::getFiles();
+    private function getClasses(): array {
+        $files = self::getFiles ();
         $classes = [];
         // Run through all the public classes, that have Action annotations, check for Route annotations
-        foreach ($files as $file) {
+        foreach ( $files as $file ) {
             // PSR-0 format namespace / folder / filename
             // strip the base off, and treat the rest as the namespace path, with the .php removed
-            $class = str_replace('/', '\\', substr($file->getPathName(), strlen($this->base), -4));
-
+            $class = str_replace ( '/', '\\', substr ( $file->getPathname (), strlen ( $this->base ), - 4 ) );
+            
             // No class found, no annotations
-            if (!$class)
-                continue;
-
+            if (! $class) continue;
+            
             // Make sure the class is not abstract
-            $refl = new ReflectionClass ($class);
-            if ($refl->isAbstract())
-                return;
-
+            $refl = new ReflectionClass ( $class );
+            if ($refl->isAbstract ()) continue;
+            
             $classes [] = $refl;
         }
         return $classes;
@@ -74,43 +76,37 @@ class DirectoryClassIterator implements Iterator
     /**
      * Get all the php files in a folder
      *
-     * @return array<SplFileInfo>
+     * @return SplFileInfo[]
      */
-    private function getFiles()
-    {
-        $directory = new RecursiveDirectoryIterator ($this->base . $this->path);
-        $iterator = new RecursiveIteratorIterator ($directory, RecursiveIteratorIterator::SELF_FIRST);
-        $regex = new RegexIterator ($iterator, '/^.+\.php$/i', RecursiveRegexIterator::GET_MATCH);
+    private function getFiles(): array {
+        $directory = new RecursiveDirectoryIterator ( $this->base . $this->path );
+        $iterator = new RecursiveIteratorIterator ( $directory, RecursiveIteratorIterator::SELF_FIRST );
+        $regex = new RegexIterator ( $iterator, '/^.+\.php$/i', RecursiveRegexIterator::GET_MATCH );
         $files = [];
-        foreach ($regex as $file) {
+        foreach ( $regex as $file ) {
             $filename = $file [0];
-            $files [] = new SplFileInfo ($filename);
+            $files [] = new SplFileInfo ( $filename );
         }
         return $files;
     }
 
-    public function current()
-    {
+    public function current() {
         return $this->array [$this->position];
     }
 
-    public function key()
-    {
+    public function key() {
         return $this->position;
     }
 
-    public function next()
-    {
-        ++$this->position;
+    public function next() {
+        $this->position++;
     }
 
-    public function rewind()
-    {
+    public function rewind() {
         $this->position = 0;
     }
 
-    public function valid()
-    {
+    public function valid() {
         return isset ($this->array [$this->position]);
     }
 

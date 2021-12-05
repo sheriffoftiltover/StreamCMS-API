@@ -1,31 +1,21 @@
 <?php
-declare(strict_types=1);
-
 namespace Destiny\Common\Annotation;
 
 /**
- * This annotation relies on the Route annotation being present
- *
  * @Annotation
- * @Target({"CLASS","METHOD"})
+ * @Target({"METHOD"})
  */
-class Secure
-{
+class Secure {
 
     /**
-     * The roles list
-     * @var array<string>
+     * @var string[]
      */
     public $roles;
 
-    /**
-     * A list of allowed roles
-     * @param array $params
-     */
-    public function __construct(array $params)
-    {
-        $this->roles = $params ['value'];
+    public function __construct(array $params = null) {
+        if (!empty($params)) {
+            $this->roles = $params ['value'];
+        }
     }
 
 }
-

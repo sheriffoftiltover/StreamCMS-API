@@ -1,62 +1,53 @@
 <?php
-declare(strict_types=1);
-
 namespace Destiny\Common;
 
 use Destiny\Common\Utils\Http;
 
-class Response
-{
+class Response {
 
     private $headers = [];
-    private $location;
+    private $status = Http::STATUS_OK;
+    private $location = '';
+    private $body;
 
-    public function __construct(private $status = Http::STATUS_OK, private $body = null)
-    {
-    }
-
-    public function getHeaders()
-    {
-        return $this->headers;
-    }
-
-    public function setHeaders($headers)
-    {
-        $this->headers = $headers;
-    }
-
-    public function addHeader($name, $value)
-    {
-        $this->headers [] = [$name, $value];
-    }
-
-    public function getStatus()
-    {
-        return $this->status;
-    }
-
-    public function setStatus($status)
-    {
+    public function __construct(int $status = Http::STATUS_OK, $body = null) {
         $this->status = $status;
-    }
-
-    public function getBody()
-    {
-        return $this->body;
-    }
-
-    public function setBody($body)
-    {
         $this->body = $body;
     }
 
-    public function getLocation()
-    {
+    public function getHeaders(): array {
+        return $this->headers;
+    }
+
+    public function setHeaders(array $headers) {
+        $this->headers = $headers;
+    }
+
+    public function addHeader(string $name, string $value) {
+        $this->headers [] = [$name, $value];
+    }
+
+    public function getStatus(): int {
+        return $this->status;
+    }
+
+    public function setStatus(int $status) {
+        $this->status = $status;
+    }
+
+    public function getBody() {
+        return $this->body;
+    }
+
+    public function setBody($body) {
+        $this->body = $body;
+    }
+
+    public function getLocation(): string {
         return $this->location;
     }
 
-    public function setLocation($location)
-    {
+    public function setLocation(string $location) {
         $this->location = $location;
     }
 

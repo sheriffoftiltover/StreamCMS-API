@@ -1,452 +1,361 @@
 <?php
-declare(strict_types=1);
-
 namespace Destiny\Common;
 
 use Destiny\Common\Routing\Route;
 use Destiny\Common\Routing\Router;
+use Destiny\Common\Session\Cookie;
+use Destiny\Common\Session\Session;
+use Destiny\Common\Session\SessionCredentials;
+use Destiny\Common\Session\SessionInstance;
+use Destiny\Common\User\UserStatus;
 use Destiny\Common\Utils\Http;
-use Destiny\Common\Utils\Options;
-use Destiny\Common\Utils\Tpl;
-use Doctrine\Common\Annotations\Reader;
+use Destiny\Common\Utils\RandomString;
 use Doctrine\Common\Cache\CacheProvider;
-use Doctrine\DBAL\Cache;
 use Doctrine\DBAL\Connection;
-use Psr\Log\LoggerInterface;
+use Error;
+use InvalidArgumentException;
 use Redis;
-use ReflectionMethod;
+use ReflectionClass;
+use ReflectionException;
+use function GuzzleHttp\json_encode;
 
-class Application extends Service
-{
+/**
+ * @method static Application instance()
+ */
+class Application extends Service {
 
-    /**
-     * The application
-     *
-     * @var Application
-     */
-    protected static $instance = null;
+    /** @var CacheProvider */
+    public $cache1 = null;
 
-    /**
-     * Public logger
-     *
-     * @var LoggerInterface
-     */
-    public $logger = null;
-
-    /**
-     * Public logger
-     *
-     * @var Cache
-     */
-    public $cacheDriver = null;
-    /**
-     * The autoloader
-     * @var callable
-     */
-    public $loader;
-    /**
-     * DB Connection
-     *
-     * @var Connection
-     */
-    protected $connection;
-    /**
-     * The current session api
-     *
-     * @var SessionInstance
-     */
+    /** @var CacheProvider */
+    public $cache2 = null;
+    
+    /** @var Connection */
+    protected $dbal;
+    
+    /** @var SessionInstance */
     protected $session = null;
-    /**
-     * A connected redis instance
-     *
-     * @var Redis
-     */
+    
+    /** @var Redis */
     protected $redis = null;
-    /**
-     * The request router
-     * @var Router
-     */
-    protected $router;
-    /**
-     * The request router
-     * @var Reader
-     */
-    protected $annotationReader;
+    
+    /** @var Router */
+    protected $router = null;
 
-    /**
-     * Construct
-     *
-     * @param array $args
-     */
-    public function __construct(array $args = null)
-    {
-        self::$instance = $this;
-        Options::setOptions($this, $args);
+    /** @var AuditLogger */
+    protected $auditLogger = null;
+    
+    /** @var callable */
+    public $loader;
+
+    /** @var Cookie */
+    protected $rememberMeCookie = null;
+
+    /** @var Cookie */
+    protected $sessionCookie = null;
+
+    /** @return Connection */
+    public static function getDbConn(){
+        return self::instance()->getDbal();
     }
 
-    /**
-     * Since this has to be created instance, only returns never creates
-     *
-     * @return Application
-     */
-    public static function instance()
-    {
-        return static::$instance;
+    /** @return CacheProvider */
+    public static function getNsCache(){
+        return self::instance()->getCache1();
     }
 
-    /**
-     * Executes the action if a route is found
-     */
-    public function executeRequest(Request $request)
-    {
+    /** @return CacheProvider */
+    public static function getVerCache(){
+        return self::instance()->getCache2();
+    }
 
+    public function executeRequest(Request $request) {
+        $response = new Response();
         $route = $this->router->findRoute($request);
-
         $model = new ViewModel ();
-        $response = null;
 
-        // Maintenance mode
-        if (Config::$a['maintenance']) {
-            $response = new Response (Http::STATUS_SERVICE_UNAVAILABLE);
-            $response->setBody($this->template('maintenance.php', $model));
+        if ($route === null) {
+            $model->code = Http::STATUS_NOT_FOUND;
+            $model->error = new Exception('notfound');
+            $response->setStatus(Http::STATUS_NOT_FOUND);
+            $response->setBody($this->errorTemplate($model));
             $this->handleResponse($response);
         }
 
-        // No route found
-        if (!$route) {
-            $response = new Response (Http::STATUS_NOT_FOUND);
-            $response->setBody($this->template('errors/' . Http::STATUS_NOT_FOUND . '.php', $model));
-            $this->handleResponse($response);
+        $useResponseAsBody = $route->getResponseBody();
+        if ($route->isSecure()) {
+            $creds = Session::getCredentials();
+            if ($creds->isValid() && $creds->getUserStatus() != UserStatus::ACTIVE) {
+                $model->code = Http::STATUS_FORBIDDEN;
+                $model->error = new Exception('inactiveuser');
+                $response->setStatus(Http::STATUS_FORBIDDEN);
+                $response->setBody($this->errorTemplate($model, $useResponseAsBody));
+                $this->handleResponse($response);
+            }
+            if (!$this->hasRouteSecurity($route, $creds, $request)) {
+                $model->code = Http::STATUS_FORBIDDEN;
+                $model->error = new Exception('forbidden');
+                $response->setStatus(Http::STATUS_FORBIDDEN);
+                $response->setBody($this->errorTemplate($model, $useResponseAsBody));
+                $this->handleResponse($response);
+            }
         }
 
-        // Security checks
-        if (!$this->hasRouteSecurity($route, Session::getCredentials())) {
-            $response = new Response (Http::STATUS_UNAUTHORIZED);
-            $response->setBody($this->template('errors/' . Http::STATUS_UNAUTHORIZED . '.php', $model));
+        $url = $route->getUrl();
+        if (!empty($url)) {
+            $response->setLocation($url);
             $this->handleResponse($response);
         }
 
         try {
-
-            // Parameters
-            $params = array_merge($_GET, $_POST, $route->getPathParams($request->path()));
-
-            // Get and init action class
-            $className = $route->getClass();
-            $classMethod = $route->getClassMethod();
-
-            // Init the action class instance
-            $classInstance = new $className ();
-
-            // Check for @Transactional annotation
-            $annotationReader = $this->getAnnotationReader();
-            $transactional = $annotationReader->getMethodAnnotation(new ReflectionMethod ($classInstance, $classMethod), 'Destiny\Common\Annotation\Transactional');
-            $transactional = !empty($transactional);
-
-            // If transactional begin a DB transaction before the action begins
-            if ($transactional) {
-                $conn = $this->getConnection();
-                $conn->beginTransaction();
-            }
-
-            // Execute the class method
-            $response = $classInstance->$classMethod ($params, $model, $request);
-
-            // Log any errors on the model
-            // @TODO neaten this implementation up - better than logging everywhere else
-            ///if (! empty ( $model->error ) && is_a ( $model->error, 'Exception' )) {
-            /// $this->logger->error ( $model->error->getMessage () );
-            //}
-            // Check if the response is valid
-            if (empty ($response)) {
-                throw new Exception ('Invalid action response');
-            }
-
-            // Redirect response
-            if (is_string($response) && substr($response, 0, 10) === 'redirect: ') {
-                $redirect = substr($response, 10);
-                $response = new Response (Http::STATUS_OK);
-                $response->setLocation($redirect);
-            }
-
-            // Template response
-            if (is_string($response)) {
-                $tpl = $response . '.php';
-                $response = new Response (Http::STATUS_OK);
-                $response->setBody($this->template($tpl, $model));
-            }
-
-            // Check the response type
-            if (!$response instanceof Response) {
-                throw new Exception ('Invalid response');
-            }
-
-            // Commit the DB transaction
-            if ($transactional) {
-                $conn->commit();
+            $result = $this->executeController($route, $request, $response, $model);
+            // TODO before invocation?
+            if ($this->auditLogger !== null && $route->getAudit()) {
+                $this->auditLogger->logRequest($request);
             }
             //
+            if($useResponseAsBody) {
+                // Use result as response body
+                $response->setBody($result);
+            } else if (is_string($result)) {
+                if (substr($result, 0, 9) === 'redirect:') {
+                    // Redirect response
+                    $redirect = trim(substr($result, 9));
+                    $response->setStatus(Http::STATUS_OK);
+                    $response->setLocation($redirect);
+                } else {
+                    // Template response
+                    Session::applyBags($model);
+                    $response->setStatus(Http::STATUS_OK);
+                    $response->setBody($this->template($result . '.php', $model));
+                }
+            } else if($result !== null) {
+                Log::critical("Invalid response " . var_export($result, true));
+                throw new Exception('invalidresponse');
+            }
         } catch (Exception $e) {
-            // Destiny\Exceptions are caught and displayed
-
-            $this->logger->error($e->getMessage());
-
-            if ($transactional) {
-                $conn->rollBack();
-            }
-
-            $response = new Response (Http::STATUS_ERROR);
-            $model->error = new Exception ($e->getMessage());
+            $id = RandomString::makeUrlSafe(12);
+            Log::error($e->getMessage(), ['trace' => $e->getTraceAsString(), 'guid' => $id]);
             $model->code = Http::STATUS_ERROR;
-
-            $response->setBody($this->template('errors/' . Http::STATUS_ERROR . '.php', $model));
-
+            $model->error = $e;
+            $model->id = $id;
+            $response->setStatus(Http::STATUS_ERROR);
+            $response->setBody($this->errorTemplate($model, $useResponseAsBody));
         } catch (\Exception $e) {
-            // \Exceptions are caught and generic message is shown
-
-            $this->logger->critical($e->getMessage());
-
-            if ($transactional) {
-                $conn->rollBack();
-            }
-
-            $response = new Response (Http::STATUS_ERROR);
-            $model->error = new Exception ('Maximum over-rustle has been achieved');
+            $id = RandomString::makeUrlSafe(12);
+            Log::critical($e->getMessage(), ['trace' => $e->getTraceAsString(), 'guid' => $id]);
             $model->code = Http::STATUS_ERROR;
-
-            $response->setBody($this->template('errors/' . Http::STATUS_ERROR . '.php', $model));
-
+            $model->error = new Exception ('Application error', $e);
+            $model->id = $id;
+            $response->setStatus(Http::STATUS_ERROR);
+            $response->setBody($this->errorTemplate($model, $useResponseAsBody));
+        } catch (Error $e) {
+            $id = RandomString::makeUrlSafe(12);
+            Log::critical($e->getMessage(), ['trace' => $e->getTraceAsString(), 'guid' => $id]);
+            $model->code = Http::STATUS_ERROR;
+            $model->error = new Exception ('Application error ' . $e->getMessage());
+            $model->id = $id;
+            $response->setStatus(Http::STATUS_ERROR);
+            $response->setBody($this->errorTemplate($model, $useResponseAsBody));
         }
 
-        // Handle the request response
         $this->handleResponse($response);
     }
 
-    /**
-     * Include a template and return a template file
-     *
-     * @param string $filename
-     * @return string
-     */
-    protected function template($filename, ViewModel $model)
-    {
-        $filename = Tpl::file($filename);
-        if (!is_file($filename)) {
-            throw new Exception (sprintf('Template not found "%s"', pathinfo($filename, PATHINFO_FILENAME)));
-        }
-        $this->logger->debug('Template: ' . $filename);
-        ob_start();
-        include $filename;
-        $contents = ob_get_contents();
-        ob_end_clean();
-        return $contents;
-    }
-
-    /**
-     * Handle the Response response
-     * @param Response $response
-     * @return void
-     * @throws Exception
-     */
-    private function handleResponse(Response $response)
-    {
+    private function handleResponse(Response $response) {
         $location = $response->getLocation();
         if (!empty ($location)) {
+            Http::status(Http::STATUS_MOVED_TEMPORARY);
             Http::header(Http::HEADER_LOCATION, $location);
-            exit ();
+            exit;
         }
+        Http::status($response->getStatus());
         $headers = $response->getHeaders();
         foreach ($headers as $header) {
             Http::header($header [0], $header [1]);
         }
-        Http::status($response->getStatus());
         $body = $response->getBody();
-        if (!empty ($body)) {
+        if ($body !== null && !is_string($body)) {
+            Http::header(Http::HEADER_CONTENT_TYPE, MimeType::JSON);
+            try {
+                $body = json_encode($body);
+            } catch (InvalidArgumentException $e) {
+                $n = new Exception('Invalid response body.', $e);
+                Log::error($n);
+            }
+        }
+        if ($body !== null || $body !== '') {
             echo $body;
         }
-        exit ();
+        exit;
     }
 
     /**
-     * Check if the security credentials have the correct values for the route
-     * @param Route $route
-     * @param Route $credentials
-     * @return bool
+     * Runs a controller method
+     * Does some magic around what parameters are passed in.
+     * @return mixed|null
+     * @throws ReflectionException
      */
-    private function hasRouteSecurity(Route $route, SessionCredentials $credentials)
-    {
-        // Check the route security against the user roles and features
-        $secure = $route->getSecure();
-        if (!empty ($secure)) {
-            foreach ($secure as $role) {
-                if (!$credentials->hasRole($role)) {
-                    return false;
-                }
+    private function executeController(Route $route, Request $request, Response $response, ViewModel $model) {
+        $className = $route->getClass();
+        $classMethod = $route->getClassMethod();
+        $classReflection = new ReflectionClass($className);
+        $classInstance = $classReflection->newInstance();
+        $methodReflection = $classReflection->getMethod($classMethod);
+        $methodParams = $methodReflection->getParameters();
+        $args = [];
+        foreach ($methodParams as $methodParam) {
+            $paramType = $methodParam->getClass();
+            if ($methodParam->isArray()) {
+                // the $params passed into the Controller classes. A merge of the _GET, _POST and variables generated from the route path (e.g. /dog/{id}/cat)
+                $args[] = array_merge(
+                    $request->get(),
+                    $request->post(),
+                    $this->router->getRoutePathParams($route, $request->path())
+                );
+            } else if ($paramType->isInstance($model)) {
+                $args[] = &$model;
+            } else if ($paramType->isInstance($request)) {
+                $args[] = &$request;
+            } else if ($paramType->isInstance($response)) {
+                $args[] = &$response;
             }
         }
+        return $methodReflection->invokeArgs($classInstance, $args);
+    }
+
+    private function hasRouteSecurity(Route $route, SessionCredentials $credentials, Request $request): bool {
+        // has ANY role
+        $secure = $route->getSecure();
+        if (!empty ($secure)) {
+            if (!in_array(true, array_map(function($role) use ($credentials) { return $credentials->hasRole($role); }, $secure))) {
+                return false;
+            }
+        }
+        // has ANY feature
         $features = $route->getFeature();
         if (!empty ($features)) {
-            foreach ($features as $feature) {
-                if (!$credentials->hasFeature($feature)) {
-                    return false;
-                }
+            if (!in_array(true, array_map(function($feature) use ($credentials) { return $credentials->hasFeature($feature); }, $features))) {
+                return false;
+            }
+        }
+        // has ANY private keys
+        $keyNames = $route->getPrivateKeys();
+        if (!empty($keyNames)) {
+            $keyValue = self::getPrivateKeyValueFromRequest($request);
+            if (empty($keyValue) || !in_array(true, array_map(function($keyName) use ($keyValue) { return strcmp(Config::$a['privateKeys'][$keyName], $keyValue) === 0; }, $keyNames))) {
+                return false;
             }
         }
         return true;
     }
 
     /**
-     * Get the annotation reader
-     * @return Reader
+     * Include a template and return the contents
+     * @throws ViewModelException
      */
-    public function getAnnotationReader()
-    {
-        return $this->annotationReader;
+    protected function template(string $filename, ViewModel $model) {
+        return $model->getContent($filename);
     }
 
     /**
-     * Set the annotation reader
-     * @param Reader $annotationReader
+     * @return string|array
      */
-    public function setAnnotationReader(Reader $annotationReader)
-    {
-        $this->annotationReader = $annotationReader;
+    protected function errorTemplate(ViewModel $model, bool $useResponseAsBody = false) {
+        try {
+            return $useResponseAsBody ? $model : $model->getContent('error.php');
+        } catch (ViewModelException $e) {
+            return $e;
+        }
     }
 
     /**
-     * Get the active connection
-     *
-     * @return Connection
+     * @return null|string
      */
-    public function getConnection()
-    {
-        return $this->connection;
+    public static function getPrivateKeyValueFromRequest(Request $request) {
+        $gets = $request->get();
+        $posts = $request->post();
+        return $gets['privatekey'] ?? $posts['privatekey'] ?? null;
     }
 
     /**
-     * Set the active connection
-     *
-     * @param Connection $connection
+     * @return string|null
      */
-    public function setConnection(Connection $connection)
-    {
-        $this->connection = $connection;
+    public static function getPrivateKeyNameFromRequest(Request $request) {
+        $keyValue = self::getPrivateKeyValueFromRequest($request);
+        foreach (Config::$a['privateKeys'] as $key => $value) {
+            if ($value == $keyValue) {
+                return $key;
+            }
+        }
+        return null;
     }
 
-    /**
-     * Get the active connection
-     *
-     * @return CacheProvider
-     */
-    public function getCacheDriver()
-    {
-        return $this->cacheDriver;
+    public function getDbal(): Connection {
+        return $this->dbal;
     }
 
-    /**
-     * Set the active connection
-     *
-     * @param CacheProvider $cacheDriver
-     */
-    public function setCacheDriver(CacheProvider $cacheDriver)
-    {
-        $this->cacheDriver = $cacheDriver;
+    public function setDbal(Connection $dbal) {
+        $this->dbal = $dbal;
     }
 
-    /**
-     * Set logger
-     *
-     * @return LoggerInterface
-     */
-    public function getLogger()
-    {
-        return $this->logger;
+    public function getCache1(): CacheProvider {
+        return $this->cache1;
     }
 
-    /**
-     * Get logger
-     *
-     * @param LoggerInterface $logger
-     */
-    public function setLogger(LoggerInterface $logger)
-    {
-        $this->logger = $logger;
+    public function setCache1(CacheProvider $cache) {
+        $this->cache1 = $cache;
     }
 
-    /**
-     * Get the session api
-     *
-     * @return \Destiny\SessionInstance
-     */
-    public function getSession()
-    {
+    public function getCache2(): CacheProvider {
+        return $this->cache2;
+    }
+
+    public function setCache2(CacheProvider $cache) {
+        $this->cache2 = $cache;
+    }
+
+    public function getSession() {
         return $this->session;
     }
 
-    /**
-     * Set the session api
-     *
-     * @param SessionInstance $session
-     */
-    public function setSession(SessionInstance $session)
-    {
+    public function setSession(SessionInstance $session) {
         $this->session = $session;
     }
 
-    /**
-     * Get the redis instance
-     *
-     * @return Redis
-     */
-    public function getRedis()
-    {
+    public function getRedis(): Redis {
         return $this->redis;
     }
 
-    /**
-     * Set the redis instance
-     *
-     * @param Redis $redis
-     */
-    public function setRedis(Redis $redis)
-    {
+    public function setRedis(Redis $redis) {
         $this->redis = $redis;
     }
 
-    /**
-     * Get the request router
-     * @return Router
-     */
-    public function getRouter()
-    {
-        return $this->router;
-    }
-
-    /**
-     * Set the request router
-     * @param Destiny\Router $router
-     */
-    public function setRouter(Router $router)
-    {
+    public function setRouter(Router $router) {
         $this->router = $router;
     }
 
-    /**
-     * Get the autoloader
-     * @return callable
-     */
-    public function getLoader()
-    {
-        return $this->loader;
-    }
-
-    /**
-     * Set the autoloader
-     * @param callable $loader
-     */
-    public function setLoader($loader)
-    {
+    public function setLoader($loader) {
         $this->loader = $loader;
     }
 
+    public function setAuditLogger(AuditLogger $auditLogger) {
+        $this->auditLogger = $auditLogger;
+    }
+
+    public function setRememberMeCookie(Cookie $cookie) {
+        $this->rememberMeCookie = $cookie;
+    }
+
+    public function getRememberMeCookie(): Cookie {
+        return $this->rememberMeCookie;
+    }
+
+    public function setSessionCookie(Cookie $cookie) {
+        $this->sessionCookie = $cookie;
+    }
+
+    public function getSessionCookie(): Cookie {
+        return $this->sessionCookie;
+    }
 }

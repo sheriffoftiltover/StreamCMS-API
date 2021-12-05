@@ -1,31 +1,75 @@
 {
-  "name": "Destiny",
-  "version": "1.4.8",
+  "name": "dgg-website",
+  "version": "2.32.2",
   "description": "Destiny.gg front-end",
-  "main": "GruntFile.js",
+  "main": "destiny",
   "scripts": {
-    "test": ""
+    "ini": "node scripts/tasks/ini.js",
+    "watch": "webpack -w",
+    "build": "webpack --mode=production",
+    "build:dev": "webpack --mode=development"
   },
   "repository": {
     "type": "git",
     "url": "git://github.com/destinygg/website.git"
   },
   "keywords": [
-    "destinygg"
+    "destiny.gg",
+    "destinygg",
+    "dgg"
   ],
-  "author": "",
-  "license": "proprietary",
-  "bugs": {
-    "url": "https://github.com/destinygg/website/issues"
+  "browserslist": [
+    "> 0.25%",
+    "not dead"
+  ],
+  "author": "Destiny.gg Foundation",
+  "contributors": [],
+  "homepage": "http://www.destiny.gg/",
+  "license": "SEE LICENSE IN <LICENSE.md>",
+  "bugs": "https://github.com/destinygg/website/issues",
+  "directories": {
+    "lib": "./lib",
+    "assets": "./assets",
+    "scripts": "./scripts",
+    "public": "./public",
+    "static": "./static"
+  },
+  "dependencies": {
+    "@fortawesome/fontawesome-free": "^5.15.3",
+    "bootstrap": "^4.6.0",
+    "chart.js": "^2.8.0",
+    "dgg-chat-gui": "^2.8.2",
+    "jquery": "^3.6.0",
+    "jquery-validation": "^1.19.3",
+    "moment": "^2.29.1",
+    "popper.js": "^1.15.0",
+    "roboto-fontface": "^0.10.0",
+    "throttle-debounce": "^3.0.1",
+    "webpack-manifest-plugin": "^3.1.1",
+    "whatwg-fetch": "^3.6.2"
   },
   "devDependencies": {
-    "grunt": "~0.4.1",
-    "grunt-contrib-less": "~0.7.0",
-    "grunt-contrib-clean": "~0.4.1",
-    "grunt-contrib-watch": "~0.4.4",
-    "grunt-contrib-uglify": "~0.2.2",
-    "grunt-contrib-copy": "~0.4.1",
-    "grunt-glue": "~0.1.1",
-    "grunt-bump": "~0.0.11"
+    "@babel/core": "^7.14.3",
+    "@babel/polyfill": "^7.6.0",
+    "@babel/preset-env": "^7.14.2",
+    "autoprefixer": "^10.2.5",
+    "babel-loader": "^8.2.2",
+    "clean-webpack-plugin": "^3.0.0",
+    "css-loader": "^5.2.5",
+    "css-minimizer-webpack-plugin": "^3.0.0",
+    "file-loader": "^6.2.0",
+    "html-loader": "^2.1.2",
+    "html-webpack-plugin": "^5.3.1",
+    "mini-css-extract-plugin": "^1.6.0",
+    "node-sass": "^6.0.0",
+    "postcss-loader": "^5.3.0",
+    "sass-loader": "^11.1.1",
+    "style-loader": "^2.0.0",
+    "webpack": "^5.37.1",
+    "webpack-cli": "^4.7.0"
+  },
+  "engines": {
+    "node": ">=5.0.2",
+    "npm": ">=3.3.12"
   }
 }

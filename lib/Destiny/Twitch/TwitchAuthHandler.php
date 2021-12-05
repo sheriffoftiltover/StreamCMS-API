@@ -1,93 +1,150 @@
 <?php
-declare(strict_types=1);
-
 namespace Destiny\Twitch;
 
-use Destiny\Common\Authentication\AuthenticationCredentials;
-use Destiny\Common\Authentication\AuthenticationRedirectionFilter;
+use Destiny\Common\Authentication\AbstractAuthHandler;
+use Destiny\Common\Authentication\AuthProvider;
+use Destiny\Common\Authentication\OAuthResponse;
 use Destiny\Common\Config;
 use Destiny\Common\Exception;
-use Destiny\Common\ViewModel;
-use OAuth2\Client;
+use Destiny\Common\Utils\FilterParams;
+use Destiny\Common\Utils\Http;
+use GuzzleHttp\Exception\RequestException;
 
-class TwitchAuthHandler
-{
+/**
+ * TODO validating requests
+ * https://dev.twitch.tv/docs/authentication/
+ * @method static TwitchAuthHandler instance()
+ */
+class TwitchAuthHandler extends AbstractAuthHandler {
 
-    /**
-     * The current auth type
-     *
-     * @var string
-     */
-    protected $authProvider = 'twitch';
+    const GRANT_TYPE_USER = 'authorization_code';
+    const GRANT_TYPE_APP = 'client_credentials';
+  
+    private $authBase = 'https://id.twitch.tv/oauth2';
+    public $authProvider = AuthProvider::TWITCH;
+    public $userProfileBaseUrl = 'https://www.twitch.tv';
 
-    /**
-     * Redirects the user to the auth provider
-     *
-     * @return void
-     */
-    public function getAuthenticationUrl()
-    {
-        $authConf = Config::$a ['oauth'] ['providers'] [$this->authProvider];
-        $callback = sprintf(Config::$a ['oauth'] ['callback'], $this->authProvider);
-        $client = new Client ($authConf ['clientId'], $authConf ['clientSecret']);
-        $client->setAccessTokenType(Client::ACCESS_TOKEN_OAUTH);
-        return $client->getAuthenticationUrl('https://api.twitch.tv/kraken/oauth2/authorize', $callback, ['scope' => 'user_read']);
+    public function exchangeCode(array $params): OAuthResponse {
+        $params['grant_type'] = self::GRANT_TYPE_USER;
+        return $this->mapTokenResponse($this->getToken($params));
+    }
+
+    public function getAuthorizationUrl($scope = ['openid', 'user:read:email'], $claims = '{"userinfo":{"picture":null, "email":null, "email_verified":null, "preferred_username": null}}'): string {
+        $conf = $this->getAuthProviderConf();
+        return "$this->authBase/authorize?" . http_build_query([
+                'response_type' => 'code',
+                'scope'         => join(' ', $scope),
+                'claims'        => $claims,
+                'force_verify'  => true,
+                'client_id'     => $conf['client_id'],
+                'redirect_uri'  => $conf['redirect_uri'],
+            ], null, '&');
     }
 
     /**
-     * @param array $params
      * @throws Exception
      */
-    public function authenticate(array $params, ViewModel $model)
-    {
-        if (!isset ($params ['code']) || empty ($params ['code'])) {
-            throw new Exception ('Authentication failed, invalid or empty code.');
+    function getToken(array $params): array {
+        FilterParams::required($params, 'grant_type');
+
+        $conf = $this->getAuthProviderConf();
+        $client = $this->getHttpClient();
+
+        # Baseline params for both user and app tokens.
+        $form_params = [
+            'grant_type' => $params['grant_type'],
+            'client_id' => $conf['client_id'],
+            'client_secret' => $conf['client_secret']
+        ];
+
+        if ($params['grant_type'] == self::GRANT_TYPE_USER) {
+            FilterParams::required($params, 'code');
+            $form_params += [
+                'redirect_uri' => $conf['redirect_uri'],
+                'code' => $params['code']
+            ];
         }
 
-        $oAuthConf = Config::$a ['oauth'] ['providers'] [$this->authProvider];
-        $client = new Client ($oAuthConf ['clientId'], $oAuthConf ['clientSecret']);
-        $client->setAccessTokenType(Client::ACCESS_TOKEN_OAUTH);
-        $response = $client->getAccessToken('https://api.twitch.tv/kraken/oauth2/token', 'authorization_code', ['redirect_uri' => sprintf(Config::$a ['oauth'] ['callback'], $this->authProvider), 'code' => $params ['code']]);
+        try {
+            $response = $client->post("$this->authBase/token", [
+                'headers' => [
+                    'User-Agent' => Config::userAgent(),
+                    'Client-ID' => $conf['client_id']
+                ],
+                'form_params' => $form_params,
+                'http_errors'=> true
+            ]);
 
-        if (empty ($response) || isset ($response ['error']))
-            throw new Exception ('Invalid access_token response');
-
-        if (!isset ($response ['result']) || empty ($response ['result']) || !isset ($response ['result'] ['access_token']))
-            throw new Exception ('Failed request for access token');
-
-        $client->setAccessToken($response ['result'] ['access_token']);
-        $response = $client->fetch('https://api.twitch.tv/kraken/user');
-
-        if (empty ($response ['result']) || isset ($response ['error']))
-            throw new Exception ('Invalid user details response');
-
-        if (is_string($response ['result']))
-            throw new Exception (sprintf('Invalid auth result %s', $response ['result']));
-
-        $authCreds = $this->getAuthCredentials($params ['code'], $response ['result']);
-        $authCredHandler = new AuthenticationRedirectionFilter ();
-        return $authCredHandler->execute($authCreds);
+            $data = json_decode((string)$response->getBody(), true);
+            FilterParams::required($data, 'access_token');
+            return $data;
+        } catch (RequestException $e) {
+            throw new Exception('Failed to get Twitch auth token.', $e);
+        }
     }
 
     /**
-     * Build a standard auth array from custom data array from api response
-     *
-     * @param string $code
-     * @param array $data
-     * @return AuthenticationCredentials
+     * @throws Exception
      */
-    private function getAuthCredentials($code, array $data)
-    {
-        if (empty ($data) || !isset ($data ['_id']) || empty ($data ['_id'])) {
-            throw new Exception ('Authorization failed, invalid user data');
+    private function getUserInfo(string $accessToken): array {
+        $client = $this->getHttpClient();
+        $response = $client->get("$this->authBase/userinfo", [
+            'headers' => [
+                'User-Agent' => Config::userAgent(),
+                'Authorization' => "Bearer $accessToken"
+            ]
+        ]);
+        if ($response->getStatusCode() == Http::STATUS_OK) {
+            $info = json_decode((string) $response->getBody(), true);
+            if (empty($info)) {
+                throw new Exception ('Invalid user_info response');
+            }
+            return $info;
         }
-        $arr = [];
-        $arr ['authProvider'] = $this->authProvider;
-        $arr ['authCode'] = $code;
-        $arr ['authId'] = $data ['_id'];
-        $arr ['authDetail'] = $data ['name'];
-        $arr ['username'] = (isset ($data ['display_name']) && !empty ($data ['display_name'])) ? $data ['display_name'] : $data ['name'];
-        $arr ['email'] = (isset ($data ['email']) && !empty ($data ['email'])) ? $data ['email'] : '';
-        return new AuthenticationCredentials ($arr);
+        throw new Exception("Failed to retrieve user info.");
+    }
+
+    /**
+     * @throws Exception
+     */
+    function mapTokenResponse(array $token): OAuthResponse {
+        $data = $this->getUserInfo($token['access_token']);
+        FilterParams::required($data, 'preferred_username');
+        return new OAuthResponse([
+            'authProvider' => $this->authProvider,
+            'accessToken' => $token['access_token'],
+            'refreshToken' => $token['refresh_token'] ?? '',
+            'username' => $data['preferred_username'],
+            'authId' => (string) $data['sub'],
+            'authDetail' => $data['preferred_username'],
+            'authEmail' => $data['email'] ?? '',
+            'verified' => boolval($data['email_verified'] ?? false),
+        ]);
+    }
+
+    /**
+     * @throws Exception
+     */
+    function renewToken(string $refreshToken): array {
+        throw new Exception("Not implemented");
+        // TODO Implement
+    }
+
+    /**
+     * Validates a token using the `/validate` OAuth endpoint. A response with
+     * status code `200` indicates the token is valid.
+     *
+     * @see https://dev.twitch.tv/docs/authentication/#validating-requests
+     */
+    function validateToken(string $accessToken): bool {
+        $client = $this->getHttpClient();
+        $response = $client->get("$this->authBase/validate", [
+            'headers' => [
+                'User-Agent' => Config::userAgent(),
+                'Authorization' => 'Bearer ' . $accessToken
+            ]
+        ]);
+
+        return $response->getStatusCode() == Http::STATUS_OK;
     }
 }

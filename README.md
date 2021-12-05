@@ -1,17 +1,15 @@
 # Destiny.gg
 Source code for the website [www.destiny.gg](http://www.destiny.gg/)
-This is a work in progress!
+
+## Important Notice
+
+As of 10/23/2021 this repository is no longer being publicly maintained. Code in it's current state is left for historic preservation, but will no longer be receiving updates or support.
+
+Inquiries can be submitted via email to contact@destiny.gg
 
 ## License
 
-The design including all CSS and images by [http://www.destiny.gg/] unless otherwise noted, is licensed under a Creative Commons Attribution-NonCommercial-NoDerivs 3.0 Unported License.
-http://creativecommons.org/licenses/by-nc-nd/3.0/deed.en_US
-
-All JavaScript, PHP and Database schemas by [http://www.destiny.gg/] unless otherwise noted, is licensed under a Creative Commons Attribution-ShareAlike 3.0 Unported License.
-http://creativecommons.org/licenses/by-sa/3.0/deed.en_US
-
-Illustration of Destiny used throughout [http://www.destiny.gg/] owned by @elevencyan
-
+See [LICENSE.md](LICENSE.md)
 
 ## Requirements
 
@@ -19,7 +17,7 @@ Illustration of Destiny used throughout [http://www.destiny.gg/] owned by @eleve
 
 [nodejs](http://nodejs.org/) Dependency manager
 
-[grunt](http://gruntjs.com/) Project builder
+[webpack](https://webpack.github.io/) Project builder
 
 [composer](http://getcomposer.org/) PHP dependency manager
 
@@ -27,7 +25,7 @@ Illustration of Destiny used throughout [http://www.destiny.gg/] owned by @eleve
 
 ### Running
 
-[nginx](http://httpd.apache.org/), [php 5.3+](http://php.net/), [mysql 5](http://dev.mysql.com/), [Redis](http://redis.io/download)
+[nginx](http://httpd.apache.org/), [php 7.1+](http://php.net/), [mysql 5](http://dev.mysql.com/), [Redis](http://redis.io/download)
 
 
 ## Getting Started
@@ -40,46 +38,42 @@ Create and load the database using `destiny.gg.sql`
 
 ### Dependencies
 
-Install the node dependencies
+Then download and install [glue](http://glue.readthedocs.org/) and [composer](http://getcomposer.org/).
+
+#### Install the node dependencies
 
 ```shell
-npm install
+npm install webpack -g
+npm ci
+composer install -no-dev
 ```
 
-Install the PHP dependencies
+#### You can now build the project.
 
 ```shell
-composer install
+npm run build
+```
+or
+```shell
+webpack -p
 ```
 
-Build the project
+#### Building while developing
 
 ```shell
-grunt build
+webpack -w
+```
+or
+```shell
+webpack
 ```
 
-## The cron job
+## Cron job
 
-All api requests and heavy tasks are done on a single cron task (currently running every 60 seconds on the live server)
-This is controlled by the Scheduler, by running "Tasks".
+The retrieval of 3rd party data (e.g. twitter feed) is run through a php script that is polled at a set interval.
 
-If you are running the website locally, you can call this file manually, or setup a cron. `/cron/index.php`
-
-The table "[prefix_]scheduled_tasks" will show when specific tasks have been run.
-
-If you don't run this, you will get empty UI and limited functionality in the site.
-
-
-## Grunt Tasks
-
-Build the project
+If you are running the website locally, you can call this file manually, or setup a cron. `./cron/index.php`
 
 ```shell
-grunt
-```
-
-Glue - create the project sprites
-
-```shell
-grunt glue
+php -f ./cron/index.php
 ```

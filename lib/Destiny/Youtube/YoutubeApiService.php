@@ -1,62 +1,47 @@
 <?php
-declare(strict_types=1);
+namespace Destiny\YouTube;
 
-namespace Destiny\Youtube;
-
+use Destiny\Common\Authentication\AuthProvider;
 use Destiny\Common\Config;
-use Destiny\Common\CurlBrowser;
-use Destiny\Common\Exception;
-use Destiny\Common\MimeType;
+use Destiny\Common\HttpClient;
 use Destiny\Common\Service;
-use Destiny\Common\Utils\Date;
-use Destiny\Common\Utils\String;
+use Destiny\Common\User\UserAuthService;
+use Destiny\Common\Utils\Http;
+use Exception;
 
-class YoutubeApiService extends Service
-{
-
-    /**
-     * Singleton
-     *
-     * @return YoutubeApiService
-     */
-    protected static $instance = null;
+/**
+ * @method static YouTubeApiService instance()
+ */
+class YouTubeApiService extends Service {
+    private $apiBase = 'https://www.googleapis.com/youtube/v3';
+    private $provider = AuthProvider::YOUTUBE;
 
     /**
-     * Singleton
-     *
-     * @return YoutubeApiService
-     */
-    public static function instance()
-    {
-        return parent::instance();
-    }
-
-    /**
-     * Get a the latest playlist from google
-     *
-     * @param array $options
-     * @param array $params
-     * @return \Destiny\CurlBrowser
      * @throws Exception
      */
-    public function getYoutubePlaylist(array $options = [], array $params = [])
-    {
-        // Get the channel ID's from a specific person
-        // GET https://www.googleapis.com/youtube/v3/channels?part=contentDetails&forUsername=StevenBonnell&key={YOUR_API_KEY}
-        $params ['limit'] = (isset ($params ['limit'])) ? intval($params ['limit']) : 4;
-        return new CurlBrowser (array_merge([
-            'url' => new String ('https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&playlistId={playlistId}&key={apikey}&maxResults={limit}', ['playlistId' => Config::$a ['youtube'] ['playlistId'], 'apikey' => Config::$a ['youtube'] ['apikey'], 'limit' => $params ['limit']]), 'contentType' => MimeType::JSON, 'onfetch' => function ($json)
-        {
-            if (is_array($json ['items'])) {
-                foreach ($json ['items'] as $i => $item) {
-                    $item ['snippet'] ['publishedAt'] = Date::getDateTime($item ['snippet'] ['publishedAt'], Date::FORMAT);
-                }
-            } else {
-                throw new Exception ('Youtube API Down');
-            }
-            return $json;
+    public function getChannelsForUserId(int $userId): array {
+        $oauthDetails = UserAuthService::instance()->getByUserIdAndProvider($userId, $this->provider);
+        if (empty($oauthDetails)) {
+            throw new Exception("Error getting YT channel IDs because no OAuth details exist for user `$userId`.");
         }
-        ], $options));
-    }
 
+        $client = HttpClient::instance();
+        $response = $client->get("$this->apiBase/channels", [
+            'headers' => [
+                'User-Agent' => Config::userAgent(),
+                'Authorization' => "Bearer {$oauthDetails['accessToken']}"
+            ],
+            'query' => [
+                'part' => 'id,snippet',
+                'mine' => 'true'
+            ]
+        ]);
+
+        if ($response->getStatusCode() !== Http::STATUS_OK) {
+            throw new Exception("Got a non-200 response when fetching YouTube channels for user `$userId`: `$response->getBody()`.");
+        }
+
+        $json = json_decode($response->getBody(), true);
+        return $json['items'];
+    }
 }

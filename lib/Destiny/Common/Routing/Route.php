@@ -1,13 +1,9 @@
 <?php
-declare(strict_types=1);
-
 namespace Destiny\Common\Routing;
 
 use Destiny\Common\Utils\Options;
-use Destiny\Common\Utils\String\Params;
 
-class Route
-{
+class Route {
 
     public $path;
     public $class;
@@ -15,144 +11,74 @@ class Route
     public $httpMethod;
     public $secure;
     public $feature;
+    public $url;
+    public $responseBody;
+    public $privateKeys;
+    public $audit;
 
-    public function __construct(array $params = null)
-    {
+    public function __construct(array $params = null) {
         if (!empty ($params)) {
             Options::setOptions($this, $params);
         }
     }
 
-    /**
-     * Serialization
-     *
-     * @return array
-     */
-    public function __sleep()
-    {
+    function __sleep() {
         return [
             'path',
             'class',
             'classMethod',
             'httpMethod',
             'secure',
-            'feature'
+            'feature',
+            'url',
+            'privateKeys',
+            'responseBody',
+            'audit'
         ];
     }
 
-    /**
-     * Return the parameters in the path
-     * @param string $path
-     * @return array
-     */
-    public function getPathParams($path)
-    {
-        $params = Params::search($this->getPath(), $path);
-        return ($params) ?: [];
-    }
-
-    public function getPath()
-    {
+    public function getPath() {
         return $this->path;
     }
 
-    public function setPath($path)
-    {
-        $this->path = $path;
-    }
-
-    /**
-     * Test is the path supplied meets the Route requirements
-     *
-     * @param string $path The path from the URI
-     * @param string $method The HTTP method
-     * @return bool
-     */
-    public function testPath($path, $method)
-    {
-        if (empty ($this->httpMethod) || in_array($method, $this->httpMethod)) {
-
-            // Remove trailing slash
-            if (strlen($path) > 1 && substr($path, -1) === '/')
-                $path = substr($path, 0, -1);
-
-            // Path without extention
-            $extlessPath = $this->stripPathExtention($path);
-
-            // Exact
-            if (strcasecmp($this->getPath(), $path) === 0 || strcasecmp($this->getPath(), $extlessPath) === 0)
-                return true;
-
-            // Regex match
-            if (Params::match($this->getPath(), $path) || Params::match($this->getPath(), $extlessPath))
-                return true;
-
-        }
-        return false;
-    }
-
-    /**
-     * @param string $path
-     * @return string
-     */
-    private function stripPathExtention($path)
-    {
-        // Remove ext
-        $ext = pathinfo($path, PATHINFO_EXTENSION);
-        if (!empty ($ext)) {
-            $path = substr($path, 0, -(strlen($ext) + 1));
-        }
-        return $path;
-    }
-
-    public function getClass()
-    {
+    public function getClass() {
         return $this->class;
     }
 
-    public function setClass($class)
-    {
-        $this->class = $class;
-    }
-
-    public function getClassMethod()
-    {
+    public function getClassMethod() {
         return $this->classMethod;
     }
 
-    public function setClassMethod($classMethod)
-    {
-        $this->classMethod = $classMethod;
-    }
-
-    public function getHttpMethod()
-    {
+    public function getHttpMethod() {
         return $this->httpMethod;
     }
 
-    public function setHttpMethod($httpMethod)
-    {
-        $this->httpMethod = $httpMethod;
-    }
-
-    public function getSecure()
-    {
+    public function getSecure() {
         return $this->secure;
     }
 
-    public function setSecure($secure)
-    {
-        $this->secure = $secure;
+    public function isSecure() {
+        return !empty($this->secure) || !empty($this->feature) || !empty($this->privateKeys);
     }
 
-    public function getFeature()
-    {
+    public function getFeature() {
         return $this->feature;
     }
 
-    public function setFeature($feature)
-    {
-        $this->feature = $feature;
+    public function getUrl() {
+        return $this->url;
+    }
+
+    public function getResponseBody() {
+        return $this->responseBody;
+    }
+
+    public function getPrivateKeys() {
+        return $this->privateKeys;
+    }
+
+    public function getAudit() {
+        return $this->audit;
     }
 
 }

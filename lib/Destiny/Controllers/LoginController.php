@@ -1,104 +1,116 @@
 <?php
-declare(strict_types=1);
-
 namespace Destiny\Controllers;
 
+use Destiny\Common\Annotation\Controller;
+use Destiny\Common\Annotation\HttpMethod;
+use Destiny\Common\Annotation\Route;
+use Destiny\Common\Authentication\AuthenticationHandler;
+use Destiny\Common\Authentication\AuthenticationRedirectionFilter;
 use Destiny\Common\Authentication\AuthenticationService;
+use Destiny\Common\Authentication\AuthProvider;
+use Destiny\Common\Authentication\DggOAuthService;
 use Destiny\Common\Exception;
-use Destiny\Common\Session;
-use Destiny\Common\User\UserService;
+use Destiny\Common\Log;
+use Destiny\Common\Request;
+use Destiny\Common\Session\Session;
+use Destiny\Common\User\UserRole;
+use Destiny\Common\Utils\FilterParams;
 use Destiny\Common\ViewModel;
+use Destiny\Discord\DiscordAuthHandler;
 use Destiny\Google\GoogleAuthHandler;
 use Destiny\Reddit\RedditAuthHandler;
+use Destiny\StreamElements\StreamElementsAuthHandler;
+use Destiny\StreamLabs\StreamLabsAuthHandler;
 use Destiny\Twitch\TwitchAuthHandler;
 use Destiny\Twitter\TwitterAuthHandler;
 
 /**
  * @Controller
  */
-class LoginController
-{
-
-    /**
-     * @Route ("/logout")
-     *
-     * @param array $params
-     */
-    public function logout(array $params)
-    {
-        AuthenticationService::instance()->logout();
-        return 'redirect: /';
-    }
+class LoginController {
 
     /**
      * @Route ("/login")
      * @HttpMethod ({"GET"})
-     *
-     * @param array $params
-     * @param ViewModel $model
-     * @return string
      */
-    public function login(array $params, ViewModel $model)
-    {
-        Session::set('accountMerge');
+    public function login(array $params, ViewModel $model): string {
+        Session::remove('isConnectingAccount');
+        $grant = isset($params['grant']) ? $params['grant'] : null;
+        $follow = (isset($params ['follow'])) ? $params ['follow'] : '';
+        $uuid = (isset($params ['uuid'])) ? $params ['uuid'] : '';
+
+        if (!empty($uuid)) {
+            try {
+                $oauthService = DggOAuthService::instance();
+                $auth = $oauthService->getFlashStore($uuid, 'uuid');
+                $app = $oauthService->getAuthClientByCode($auth['client_id']);
+            } catch (Exception $e) {
+                Session::setErrorBag($e->getMessage());
+                return 'redirect: /profile';
+            }
+        } else {
+            if (Session::hasRole(UserRole::USER)) {
+                return 'redirect: /profile/authentication';
+            }
+            $app = [];
+        }
+
         $model->title = 'Login';
-        $model->follow = (isset ($params ['follow'])) ? $params ['follow'] : '';
+        $model->follow = $follow;
+        $model->grant = $grant;
+        $model->uuid = $uuid;
+        $model->app = $app;
         return 'login';
+    }
+
+    /**
+     * @Route ("/logout")
+     */
+    public function logout(): string {
+        AuthenticationService::instance()->removeWebSession();
+        return 'redirect: /';
+    }
+
+    /**
+     * @Route ("/auth/twitch")
+     * @Route ("/auth/twitter")
+     * @Route ("/auth/google")
+     * @Route ("/auth/reddit")
+     * @Route ("/auth/discord")
+     */
+    public function authByType(array $params, Request $request): string {
+        try {
+            $type = substr($request->path(), strlen("/auth/"));
+            $authService = AuthenticationService::instance();
+            $authHandler = $authService->getLoginAuthHandlerByType($type);
+            $response = $authHandler->exchangeCode($params);
+            $redirectFilter = new AuthenticationRedirectionFilter($response, $request);
+            return $redirectFilter->execute();
+        } catch (Exception $e) {
+            Session::setErrorBag($e->getMessage());
+            Log::warn($e->getMessage(), $e->extractRequestResponse());
+        }
+        return 'redirect: /login';
     }
 
     /**
      * @Route ("/login")
      * @HttpMethod ({"POST"})
-     *
-     * @param array $params
-     * @param ViewModel $model
-     * @return string
      */
-    public function loginPost(array $params, ViewModel $model)
-    {
-        $userService = UserService::instance();
-
-        $authProvider = (isset ($params ['authProvider']) && !empty ($params['authProvider'])) ? $params ['authProvider'] : '';
-        $rememberme = isset ($params ['rememberme']) && !empty ($params ['rememberme']);
-
-        if (empty ($authProvider)) {
-            $model->title = 'Login error';
-            $model->rememberme = $rememberme;
-            $model->error = new Exception ('Please select a authentication provider');
-            return 'login';
-        }
-
-        Session::start(Session::START_NOCOOKIE);
-        if ($rememberme) {
-            Session::set('rememberme', 1);
-        }
-
-        if (isset ($params ['follow']) && !empty ($params ['follow'])) {
-            Session::set('follow', $params ['follow']);
-        }
-
-        switch (strtoupper($authProvider)) {
-            case 'TWITCH' :
-                $authHandler = new TwitchAuthHandler ();
-                return 'redirect: ' . $authHandler->getAuthenticationUrl();
-
-            case 'GOOGLE' :
-                $authHandler = new GoogleAuthHandler ();
-                return 'redirect: ' . $authHandler->getAuthenticationUrl();
-
-            case 'TWITTER' :
-                $authHandler = new TwitterAuthHandler ();
-                return 'redirect: ' . $authHandler->getAuthenticationUrl();
-
-            case 'REDDIT' :
-                $authHandler = new RedditAuthHandler ();
-                return 'redirect: ' . $authHandler->getAuthenticationUrl();
-
-            default :
-                $model->title = 'Login error';
-                $model->rememberme = $rememberme;
-                $model->error = new Exception ('Authentication type not supported');
-                return 'login';
+    public function loginPost(array $params): string {
+        try {
+            FilterParams::required($params, 'authProvider');
+            $authService = AuthenticationService::instance();
+            Session::start();
+            Session::set('rememberme', (isset ($params ['rememberme']) && !empty ($params ['rememberme'])) ? 1 : 0);
+            Session::set('follow', (isset ($params ['follow']) && !empty ($params ['follow'])) ? $params ['follow'] : null);
+            Session::set('grant', (isset ($params ['grant']) && !empty ($params ['grant'])) ? $params ['grant'] : null);
+            Session::set('uuid', (isset ($params ['uuid']) && !empty ($params ['uuid'])) ? $params ['uuid'] : null);
+            $handler = $authService->getLoginAuthHandlerByType($params ['authProvider']);
+            return 'redirect: ' . $handler->getAuthorizationUrl();
+        } catch (Exception $e) {
+            Session::setErrorBag($e->getMessage());
+            return 'redirect: /login';
         }
     }
 }

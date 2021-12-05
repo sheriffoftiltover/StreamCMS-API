@@ -1,38 +1,18 @@
 <?php
-declare(strict_types=1);
-
 namespace Destiny\Common\Annotation;
 
 /**
  * @Annotation
- * @Target({"CLASS","METHOD"})
+ * @Target({"METHOD"})
  */
-class Route
-{
+class Route {
 
-    /**
-     * The URL path
-     * @var string
-     */
-    public $path;
+    public $path = '';
 
-    /**
-     * The annotation params
-     * @param array $params
-     */
-    public function __construct(array $params)
-    {
-        $this->path = $params ['value'];
-    }
-
-    /**
-     * Get the path
-     * @return string
-     */
-    public function getPath()
-    {
-        return $this->path;
+    public function __construct(array $params = null) {
+        if (!empty($params)) {
+            $this->path = $params['value'];
+        }
     }
 
 }
-

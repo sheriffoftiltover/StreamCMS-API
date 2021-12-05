@@ -1,25 +1,22 @@
 <?php
-declare(strict_types=1);
-
 namespace Destiny\Common;
 
-abstract class Service
-{
+use function get_called_class;
 
-    /**
-     * @var Service
-     */
-    protected static $instance = null;
+abstract class Service {
 
-    /**
-     * @return $instance
-     */
-    public static function instance()
-    {
-        if (static::$instance === null) {
-            static::$instance = new static ();
+    /** @var Service[] */
+    protected static $_instances = [];
+
+    public static function instance() {
+        $class = get_called_class();
+        if (!isset(static::$_instances[$class])) {
+            static::$_instances[$class] = new static;
+            static::$_instances[$class]->afterConstruct();
         }
-        return static::$instance;
+        return static::$_instances[$class];
     }
+
+    public function afterConstruct() {}
 
 }
