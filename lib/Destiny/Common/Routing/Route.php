@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace Destiny\Common\Routing;
 
@@ -47,7 +48,7 @@ class Route
     public function getPathParams($path)
     {
         $params = Params::search($this->getPath(), $path);
-        return ($params) ? $params : [];
+        return ($params) ?: [];
     }
 
     public function getPath()

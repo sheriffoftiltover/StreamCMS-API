@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace Destiny\Common\Authentication;
 
@@ -326,7 +327,7 @@ class AuthenticationService extends Service
     public function setRememberMe(array $user)
     {
         $this->clearRememberMe($user ['userId']);
-        $createdDate = Date::getDateTime('NOW');
+        $createdDate = Date::getDateTime();
         $expireDate = Date::getDateTime('NOW + 30 day');
         $token = md5($user ['userId'] . $createdDate->getTimestamp() . $expireDate->getTimestamp() . $this->remembermeSalt);
         $rememberMeService = RememberMeService::instance();

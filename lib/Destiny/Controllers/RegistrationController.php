@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace Destiny\Controllers;
 
@@ -88,7 +89,7 @@ class RegistrationController
         $username = (isset ($params ['username']) && !empty ($params ['username'])) ? $params ['username'] : '';
         $email = (isset ($params ['email']) && !empty ($params ['email'])) ? $params ['email'] : '';
         $country = (isset ($params ['country']) && !empty ($params ['country'])) ? $params ['country'] : '';
-        $rememberme = (isset ($params ['rememberme']) && !empty ($params ['rememberme'])) ? true : false;
+        $rememberme = isset ($params ['rememberme']) && !empty ($params ['rememberme']);
 
         $authCreds->setUsername($username);
         $authCreds->setEmail($email);

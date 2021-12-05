@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace Destiny\Tasks;
 
@@ -55,12 +56,12 @@ class RedditSubscribers
         $records = $stmt->fetchAll();
         $json = [];
         foreach ($records as $record) {
-            $json [] = ['id' => $record ['userId'], 'username' => $record ['username'], 'subscription' => ['startDate' => $record ['createdDate'], 'endDate' => $record ['endDate'], 'recurring' => ($record ['recurring']) ? true : false, 'tier' => $record ['subscriptionTier'], 'type' => $record ['subscriptionType']], 'reddit' => ['username' => $record ['authDetail'], 'id' => $record ['authId']]];
+            $json [] = ['id' => $record ['userId'], 'username' => $record ['username'], 'subscription' => ['startDate' => $record ['createdDate'], 'endDate' => $record ['endDate'], 'recurring' => (bool)$record ['recurring'], 'tier' => $record ['subscriptionTier'], 'type' => $record ['subscriptionType']], 'reddit' => ['username' => $record ['authDetail'], 'id' => $record ['authId']]];
         }
 
         $tmpFilename = $this->output . '.' . time();
         file_put_contents($tmpFilename, json_encode($json, JSON_NUMERIC_CHECK));
-        @unlink($this->output);
+        unlink($this->output);
         rename($tmpFilename, $this->output);
         $log->debug(sprintf('Output subscribers json "%s"', $this->output));
     }

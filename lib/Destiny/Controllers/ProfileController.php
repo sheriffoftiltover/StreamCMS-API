@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace Destiny\Controllers;
 
@@ -185,7 +186,7 @@ class ProfileController
             if ($nameChangeCount >= Config::$a ['profile'] ['nameChangeLimit']) {
                 throw new Exception ('You have reached your name change limit');
             } else {
-                $userData ['nameChangedDate'] = Date::getDateTime('NOW')->format('Y-m-d H:i:s');
+                $userData ['nameChangedDate'] = Date::getDateTime()->format('Y-m-d H:i:s');
                 $userData ['nameChangedCount'] = $nameChangeCount + 1;
             }
         }

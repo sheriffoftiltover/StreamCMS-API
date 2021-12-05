@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace Destiny\Common\Utils\String;
 
@@ -117,10 +118,7 @@ abstract class Params
 
     protected static function addSlashes($value)
     {
-        if (!get_magic_quotes_gpc()) {
-            $value = addslashes($value);
-        }
-        return $value;
+        return addslashes($value);
     }
 
 }

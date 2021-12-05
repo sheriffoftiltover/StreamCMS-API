@@ -1,10 +1,11 @@
 <?php
+declare(strict_types=1);
 
 use Destiny\Common\Config;
 use Destiny\Common\Utils\Tpl;
 
 $words = include 'errors/words.php';
-$word = $words [array_rand($words, 1)];
+$word = $words [array_rand($words)];
 ?>
 <!DOCTYPE html>
 <html>

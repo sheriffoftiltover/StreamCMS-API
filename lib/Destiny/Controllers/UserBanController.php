@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace Destiny\Controllers;
 
@@ -39,7 +40,7 @@ class UserBanController
         }
 
         $model->user = $user;
-        $time = Date::getDateTime('NOW');
+        $time = Date::getDateTime();
         $model->ban = ['reason' => '', 'starttimestamp' => $time->format('Y-m-d H:i:s'), 'endtimestamp' => ''];
         return 'admin/userban';
     }

@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace Destiny\Common;
 
@@ -140,7 +141,7 @@ class Application extends Service
             // Check for @Transactional annotation
             $annotationReader = $this->getAnnotationReader();
             $transactional = $annotationReader->getMethodAnnotation(new ReflectionMethod ($classInstance, $classMethod), 'Destiny\Common\Annotation\Transactional');
-            $transactional = (empty($transactional)) ? false : true;
+            $transactional = !empty($transactional);
 
             // If transactional begin a DB transaction before the action begins
             if ($transactional) {
@@ -191,7 +192,7 @@ class Application extends Service
             $this->logger->error($e->getMessage());
 
             if ($transactional) {
-                $conn->rollback();
+                $conn->rollBack();
             }
 
             $response = new Response (Http::STATUS_ERROR);
@@ -206,7 +207,7 @@ class Application extends Service
             $this->logger->critical($e->getMessage());
 
             if ($transactional) {
-                $conn->rollback();
+                $conn->rollBack();
             }
 
             $response = new Response (Http::STATUS_ERROR);

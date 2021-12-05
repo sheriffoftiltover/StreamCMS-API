@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace Destiny\Controllers;
 
@@ -138,7 +139,7 @@ class AdminController
     {
         FilterParams::isRequired($params, 's');
         $userService = UserService::instance();
-        $users = $userService->findUsers($params ['s'], 10);
+        $users = $userService->findUsers($params ['s']);
         $response = new Response (Http::STATUS_OK);
         $response->addHeader(Http::HEADER_CONTENTTYPE, MimeType::JSON);
         $response->setBody(json_encode($users));

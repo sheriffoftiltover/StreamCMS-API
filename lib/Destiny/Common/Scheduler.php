@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace Destiny\Common;
 
@@ -48,7 +49,7 @@ class Scheduler
         foreach ($this->schedule as $i => $action) {
             $task = $this->getTask($this->schedule [$i] ['action']);
             if (empty ($task)) {
-                $this->schedule [$i] ['lastExecuted'] = date(DateTime::ATOM);
+                $this->schedule [$i] ['lastExecuted'] = date(DATE_ATOM);
                 $this->schedule [$i] ['executeCount'] = 0;
                 $this->insertTask($this->schedule [$i]);
             } else {
@@ -94,7 +95,7 @@ class Scheduler
             // First run/ Execute on next run
             if ($this->schedule [$i] ['executeOnNextRun']) {
                 $this->schedule [$i] ['executeCount'] = intval($this->schedule [$i] ['executeCount']) + 1;
-                $this->schedule [$i] ['lastExecuted'] = date(DateTime::ATOM);
+                $this->schedule [$i] ['lastExecuted'] = date(DATE_ATOM);
                 $this->schedule [$i] ['executeOnNextRun'] = false;
                 $this->updateTask($this->schedule [$i]);
                 $this->executeTask($this->schedule [$i]);
@@ -105,7 +106,7 @@ class Scheduler
             $nextExecute->modify('+' . $this->schedule [$i] ['frequency'] . ' ' . $this->schedule [$i] ['period']);
             if (time() > $nextExecute->getTimestamp()) {
                 $this->schedule [$i] ['executeCount'] = intval($this->schedule [$i] ['executeCount']) + 1;
-                $this->schedule [$i] ['lastExecuted'] = date(DateTime::ATOM);
+                $this->schedule [$i] ['lastExecuted'] = date(DATE_ATOM);
                 $this->schedule [$i] ['executeOnNextRun'] = false;
                 $this->updateTask($this->schedule [$i]);
                 $this->executeTask($this->schedule [$i]);
@@ -154,7 +155,7 @@ class Scheduler
         $task = $this->getTaskByName($name);
         if (!empty ($task)) {
             $task ['executeCount'] = intval($task ['executeCount']) + 1;
-            $task ['lastExecuted'] = date(DateTime::ATOM);
+            $task ['lastExecuted'] = date(DATE_ATOM);
             $this->updateTask($task);
             $this->executeTask($task);
         }

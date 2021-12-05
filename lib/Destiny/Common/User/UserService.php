@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace Destiny\Common\User;
 
@@ -119,7 +120,7 @@ class UserService extends Service
         $stmt->bindValue('username', $username, PDO::PARAM_STR);
         $stmt->bindValue('excludeUserId', $excludeUserId, PDO::PARAM_INT);
         $stmt->execute();
-        return ($stmt->fetchColumn() > 0) ? true : false;
+        return $stmt->fetchColumn() > 0;
     }
 
     /**
@@ -136,7 +137,7 @@ class UserService extends Service
         $stmt->bindValue('email', $email, PDO::PARAM_STR);
         $stmt->bindValue('excludeUserId', $excludeUserId, PDO::PARAM_INT);
         $stmt->execute();
-        return ($stmt->fetchColumn() > 0) ? true : false;
+        return $stmt->fetchColumn() > 0;
     }
 
     /**
@@ -175,8 +176,8 @@ class UserService extends Service
     public function addUser(array $user)
     {
         $conn = Application::instance()->getConnection();
-        $user ['createdDate'] = Date::getDateTime('NOW')->format('Y-m-d H:i:s');
-        $user ['modifiedDate'] = Date::getDateTime('NOW')->format('Y-m-d H:i:s');
+        $user ['createdDate'] = Date::getDateTime()->format('Y-m-d H:i:s');
+        $user ['modifiedDate'] = Date::getDateTime()->format('Y-m-d H:i:s');
         $conn->insert('dfl_users', $user);
         return $conn->lastInsertId();
     }
@@ -190,7 +191,7 @@ class UserService extends Service
     public function updateUser($userId, array $user)
     {
         $conn = Application::instance()->getConnection();
-        $user ['modifiedDate'] = Date::getDateTime('NOW')->format('Y-m-d H:i:s');
+        $user ['modifiedDate'] = Date::getDateTime()->format('Y-m-d H:i:s');
         $conn->update('dfl_users', $user, ['userId' => $userId]);
     }
 
@@ -285,7 +286,7 @@ class UserService extends Service
     public function updateUserAuthProfile($userId, $authProvider, array $auth)
     {
         $conn = Application::instance()->getConnection();
-        $auth ['modifiedDate'] = Date::getDateTime('NOW')->format('Y-m-d H:i:s');
+        $auth ['modifiedDate'] = Date::getDateTime()->format('Y-m-d H:i:s');
         $conn->update('dfl_users_auth', $auth, ['userId' => $userId, 'authProvider' => $authProvider]);
     }
 
@@ -298,7 +299,7 @@ class UserService extends Service
     public function addUserAuthProfile(array $auth)
     {
         $conn = Application::instance()->getConnection();
-        $conn->insert('dfl_users_auth', ['userId' => $auth ['userId'], 'authProvider' => $auth ['authProvider'], 'authId' => $auth ['authId'], 'authCode' => $auth ['authCode'], 'authDetail' => $auth ['authDetail'], 'createdDate' => Date::getDateTime('NOW')->format('Y-m-d H:i:s'), 'modifiedDate' => Date::getDateTime('NOW')->format('Y-m-d H:i:s')], [PDO::PARAM_INT, PDO::PARAM_STR, PDO::PARAM_INT, PDO::PARAM_STR, PDO::PARAM_STR, PDO::PARAM_STR]);
+        $conn->insert('dfl_users_auth', ['userId' => $auth ['userId'], 'authProvider' => $auth ['authProvider'], 'authId' => $auth ['authId'], 'authCode' => $auth ['authCode'], 'authDetail' => $auth ['authDetail'], 'createdDate' => Date::getDateTime()->format('Y-m-d H:i:s'), 'modifiedDate' => Date::getDateTime()->format('Y-m-d H:i:s')], [PDO::PARAM_INT, PDO::PARAM_STR, PDO::PARAM_INT, PDO::PARAM_STR, PDO::PARAM_STR, PDO::PARAM_STR]);
     }
 
     /**
@@ -475,7 +476,7 @@ class UserService extends Service
     public function addAddress(array $address)
     {
         $conn = Application::instance()->getConnection();
-        $conn->insert('users_address', ['userId' => $address ['userId'], 'fullName' => $address ['fullName'], 'line1' => $address ['line1'], 'line2' => $address ['line2'], 'city' => $address ['city'], 'region' => $address ['region'], 'zip' => $address ['zip'], 'country' => $address ['country'], 'createdDate' => Date::getDateTime('NOW')->format('Y-m-d H:i:s'), 'modifiedDate' => Date::getDateTime('NOW')->format('Y-m-d H:i:s')], [PDO::PARAM_INT, PDO::PARAM_STR, PDO::PARAM_STR, PDO::PARAM_STR, PDO::PARAM_STR, PDO::PARAM_STR, PDO::PARAM_STR, PDO::PARAM_STR, PDO::PARAM_STR, PDO::PARAM_STR]);
+        $conn->insert('users_address', ['userId' => $address ['userId'], 'fullName' => $address ['fullName'], 'line1' => $address ['line1'], 'line2' => $address ['line2'], 'city' => $address ['city'], 'region' => $address ['region'], 'zip' => $address ['zip'], 'country' => $address ['country'], 'createdDate' => Date::getDateTime()->format('Y-m-d H:i:s'), 'modifiedDate' => Date::getDateTime()->format('Y-m-d H:i:s')], [PDO::PARAM_INT, PDO::PARAM_STR, PDO::PARAM_STR, PDO::PARAM_STR, PDO::PARAM_STR, PDO::PARAM_STR, PDO::PARAM_STR, PDO::PARAM_STR, PDO::PARAM_STR, PDO::PARAM_STR]);
     }
 
     /**
@@ -486,7 +487,7 @@ class UserService extends Service
     public function updateAddress(array $address)
     {
         $conn = Application::instance()->getConnection();
-        $address ['modifiedDate'] = Date::getDateTime('NOW')->format('Y-m-d H:i:s');
+        $address ['modifiedDate'] = Date::getDateTime()->format('Y-m-d H:i:s');
         $conn->update('users_address', $address, ['id' => $address['id']]);
     }
 
@@ -638,7 +639,7 @@ class UserService extends Service
         $redis = Application::instance()->getRedis();
 
         $dir = Config::$a ['redis'] ['scriptdir'];
-        $hash = @file_get_contents($dir . $scriptname . '.hash');
+        $hash = file_get_contents($dir . $scriptname . '.hash');
 
         if ($hash) {
             $ret = $redis->evalSha($hash, $argument);

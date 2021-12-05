@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace Destiny\Commerce;
 
@@ -57,7 +58,7 @@ class OrdersService extends Service
     public function addOrder(array $order)
     {
         $conn = Application::instance()->getConnection();
-        $conn->insert('dfl_orders', ['userId' => $order ['userId'], 'amount' => $order ['amount'], 'currency' => $order ['currency'], 'description' => $order ['description'], 'state' => OrderStatus::_NEW, 'createdDate' => Date::getDateTime('NOW')->format('Y-m-d H:i:s')]);
+        $conn->insert('dfl_orders', ['userId' => $order ['userId'], 'amount' => $order ['amount'], 'currency' => $order ['currency'], 'description' => $order ['description'], 'state' => OrderStatus::_NEW, 'createdDate' => Date::getDateTime()->format('Y-m-d H:i:s')]);
         $order ['orderId'] = $conn->lastInsertId();
         return $order ['orderId'];
     }
@@ -362,7 +363,7 @@ class OrdersService extends Service
     public function addOrderPayment(array $payment)
     {
         $conn = Application::instance()->getConnection();
-        $conn->insert('dfl_orders_payments', ['orderId' => $payment ['orderId'], 'amount' => $payment ['amount'], 'currency' => $payment ['currency'], 'transactionId' => $payment ['transactionId'], 'transactionType' => $payment ['transactionType'], 'paymentType' => $payment ['paymentType'], 'payerId' => $payment ['payerId'], 'paymentStatus' => $payment ['paymentStatus'], 'paymentDate' => $payment ['paymentDate'], 'createdDate' => Date::getDateTime('NOW')->format('Y-m-d H:i:s')]);
+        $conn->insert('dfl_orders_payments', ['orderId' => $payment ['orderId'], 'amount' => $payment ['amount'], 'currency' => $payment ['currency'], 'transactionId' => $payment ['transactionId'], 'transactionType' => $payment ['transactionType'], 'paymentType' => $payment ['paymentType'], 'payerId' => $payment ['payerId'], 'paymentStatus' => $payment ['paymentStatus'], 'paymentDate' => $payment ['paymentDate'], 'createdDate' => Date::getDateTime()->format('Y-m-d H:i:s')]);
         return $conn->lastInsertId();
     }
 

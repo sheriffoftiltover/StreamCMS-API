@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace Destiny\Common;
 
@@ -21,35 +22,21 @@ class DirectoryClassIterator implements Iterator
      * The position of the iterator
      * @var int
      */
-    private $position = 0;
+    private $position;
 
     /**
      * List of classes
      * @var array<ReflectionClass>
      */
-    private $array = [];
-
-    /**
-     * The base path
-     * @var string
-     */
-    private $base;
-
-    /**
-     * The path to the classes for annotation reading
-     * @var string
-     */
-    private $path;
+    private $array;
 
     /**
      *
      * @param string $base
      * @param string $path
      */
-    public function __construct($base, $path)
+    public function __construct(private $base, private $path)
     {
-        $this->base = $base;
-        $this->path = $path;
         $this->array = $this->getClasses();
         $this->position = 0;
     }

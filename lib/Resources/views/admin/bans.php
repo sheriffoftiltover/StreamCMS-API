@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 use Destiny\Common\Config;
 use Destiny\Common\Utils\Date;

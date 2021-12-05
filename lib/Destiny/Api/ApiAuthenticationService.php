@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace Destiny\Api;
 
@@ -60,7 +61,7 @@ class ApiAuthenticationService extends Service
         $stmt = $conn->prepare('SELECT COUNT(*) FROM dfl_users_auth_token WHERE authToken = :authToken LIMIT 0,1');
         $stmt->bindValue('authToken', $authToken, PDO::PARAM_INT);
         $stmt->execute();
-        return ($stmt->fetchColumn() == 1) ? true : false;
+        return $stmt->fetchColumn() == 1;
     }
 
     /**
@@ -72,7 +73,7 @@ class ApiAuthenticationService extends Service
     public function addAuthToken($userId, $authToken)
     {
         $conn = Application::instance()->getConnection();
-        $conn->insert('dfl_users_auth_token', ['userId' => $userId, 'authToken' => $authToken, 'createdDate' => Date::getDateTime('NOW')->format('Y-m-d H:i:s')]);
+        $conn->insert('dfl_users_auth_token', ['userId' => $userId, 'authToken' => $authToken, 'createdDate' => Date::getDateTime()->format('Y-m-d H:i:s')]);
     }
 
     /**

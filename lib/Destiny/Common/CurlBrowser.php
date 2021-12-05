@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace Destiny\Common;
 
@@ -339,7 +340,7 @@ class CurlBrowser
 
     public function isPost()
     {
-        return (empty ($this->postData)) ? false : true;
+        return !empty ($this->postData);
     }
 
 }

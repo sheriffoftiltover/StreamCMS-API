@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace Destiny\Common;
 
@@ -8,14 +9,10 @@ class Response
 {
 
     private $headers = [];
-    private $status = Http::STATUS_OK;
-    private $body;
     private $location;
 
-    public function __construct($status, $body = null)
+    public function __construct(private $status = Http::STATUS_OK, private $body = null)
     {
-        $this->status = $status;
-        $this->body = $body;
     }
 
     public function getHeaders()

@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace Destiny\Commerce;
 
@@ -110,7 +111,7 @@ class PayPalApiService extends Service
 
         $RPProfileDetails = new RecurringPaymentsProfileDetailsType ();
         $RPProfileDetails->SubscriberName = Session::getCredentials()->getUsername(); // This should be passed in
-        $RPProfileDetails->BillingStartDate = $billingStartDate->format(DateTime::ATOM);
+        $RPProfileDetails->BillingStartDate = $billingStartDate->format(DATE_ATOM);
         $RPProfileDetails->ProfileReference = $paymentProfile ['userId'] . '-' . $paymentProfile ['orderId'];
 
         $paymentBillingPeriod = new BillingPeriodDetailsType ();
@@ -290,7 +291,6 @@ class PayPalApiService extends Service
      */
     public function recordECPayments(DoExpressCheckoutPaymentResponseType $DoECResponse, $payerId, array &$order)
     {
-        $payments = [];
         $orderService = OrdersService::instance();
         $orderStatus = OrderStatus::COMPLETED;
         for ($i = 0; $i < count($DoECResponse->DoExpressCheckoutPaymentResponseDetails->PaymentInfo); ++$i) {
@@ -306,7 +306,6 @@ class PayPalApiService extends Service
             $payment ['paymentStatus'] = $paymentInfo->PaymentStatus;
             $payment ['paymentDate'] = Date::getDateTime($paymentInfo->PaymentDate)->format('Y-m-d H:i:s');
             $orderService->addOrderPayment($payment);
-            $payments [] = $payment;
             if ($paymentInfo->PaymentStatus != PaymentStatus::COMPLETED) {
                 $orderStatus = OrderStatus::PENDING;
             }

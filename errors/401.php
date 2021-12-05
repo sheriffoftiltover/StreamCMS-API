@@ -1,11 +1,13 @@
 <?php
+declare(strict_types=1);
+
 use Destiny\Common\Utils\Tpl;
 use Destiny\Common\Config;
 
 require_once realpath ( __DIR__ . '/../lib/' ) . '/autoload.php';
 
 $words = include 'words.php';
-$word = $words [array_rand ( $words, 1 )];
+$word = $words [array_rand ( $words)];
 ?>
 <!DOCTYPE html>
 <html>

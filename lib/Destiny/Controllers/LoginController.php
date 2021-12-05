@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace Destiny\Controllers;
 
@@ -58,7 +59,7 @@ class LoginController
         $userService = UserService::instance();
 
         $authProvider = (isset ($params ['authProvider']) && !empty ($params['authProvider'])) ? $params ['authProvider'] : '';
-        $rememberme = (isset ($params ['rememberme']) && !empty ($params ['rememberme'])) ? true : false;
+        $rememberme = isset ($params ['rememberme']) && !empty ($params ['rememberme']);
 
         if (empty ($authProvider)) {
             $model->title = 'Login error';

@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 return [
     'cacheAnnotations' => true,
     // If TRUE, stores the annotation definitions in files /tmp/annotations/ (these need to be cleared if changes are made to annotations)
@@ -9,7 +10,7 @@ return [
         'nameChangeLimit' => 0
     ],
     'chat' => [
-        'host' => @$_SERVER['SERVER_NAME'],
+        'host' => $_SERVER['SERVER_NAME'],
         'port' => 9998,
         'backlog' => 150,
         'maxlines' => 150,
