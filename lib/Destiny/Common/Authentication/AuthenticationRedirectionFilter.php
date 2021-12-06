@@ -167,7 +167,7 @@ class AuthenticationRedirectionFilter {
             $oauthService->saveFlashStore($code, $data);
             $oauthService->deleteFlashStore($uuid);
 
-            $redirectUri = $data['redirect_uri'] . '?' . http_build_query(['code' => $code, 'state' => $data['state']], null, '&');
+            $redirectUri = $data['redirect_uri'] . '?' . http_build_query(['code' => $code, 'state' => $data['state']]);
             return "redirect: $redirectUri";
 
         } else {

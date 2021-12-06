@@ -205,8 +205,9 @@ class Application extends Service
             try {
                 $body = json_encode($body);
             } catch (InvalidArgumentException $e) {
+                // FIXME @sheriffoftiltover What the fuck lol
                 $n = new Exception('Invalid response body.', $e);
-                Log::error($n);
+                Log::error($n->getTraceAsString());
             }
         }
         if ($body !== null || $body !== '') {

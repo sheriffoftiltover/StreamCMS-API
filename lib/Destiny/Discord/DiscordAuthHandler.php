@@ -29,7 +29,7 @@ class DiscordAuthHandler extends AbstractAuthHandler {
             'state' => md5(time() . 'ifC35_'),
             'client_id' => $conf['client_id'],
             'redirect_uri' => $conf['redirect_uri']
-        ], null, '&');
+        ]);
     }
 
     /**

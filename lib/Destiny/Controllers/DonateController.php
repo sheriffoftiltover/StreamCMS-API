@@ -113,8 +113,10 @@ class DonateController {
             $donation['id'] = $donationService->addDonation($donation);
 
             $payPalApiService = PayPalApiService::instance();
-            $returnUrl = Http::getBaseUrl() . '/donate/process?success=true&donationid=' . urlencode($donation['id']);
-            $cancelUrl = Http::getBaseUrl() . '/donate/process?success=false&donationid=' . urlencode($donation['id']);
+            // FIXME @sheriffoftiltover Why are we urlencoding an integer wtf?
+            $baseUrl = Http::getBaseUrl();
+            $returnUrl = "{$baseUrl}/donate/process?success=true&donationid={$donation['id']}";
+            $cancelUrl = "{$baseUrl}/donate/process?success=false&donationid={$donation['id']}";
             $token = $payPalApiService->createDonateECRequest($returnUrl, $cancelUrl, $donation);
             $conn->commit();
             return 'redirect: ' . Config::$a['paypal']['endpoint_checkout'] . urlencode($token);

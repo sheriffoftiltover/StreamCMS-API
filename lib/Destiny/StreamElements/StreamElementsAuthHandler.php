@@ -26,7 +26,7 @@ class StreamElementsAuthHandler extends AbstractAuthHandler {
             'response_type' => 'code',
             'client_id'     => $conf['client_id'],
             'redirect_uri'  => $conf['redirect_uri']
-        ], null, '&');
+        ]);
     }
 
     /**

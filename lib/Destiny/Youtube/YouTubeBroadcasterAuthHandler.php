@@ -34,7 +34,7 @@ class YouTubeBroadcasterAuthHandler extends YouTubeAuthHandler {
             'redirect_uri' => sprintf($conf['redirect_uri'], $this->authProvider),
             'access_type' => 'offline',
             'include_granted_scopes' => 'true'
-        ], null, '&');
+        ]);
     }
 
     /**

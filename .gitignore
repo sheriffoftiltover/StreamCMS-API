@@ -37,3 +37,5 @@ config/config.local.php
 /public/files
 /public/*.html
 /public/t
+
+/vendor

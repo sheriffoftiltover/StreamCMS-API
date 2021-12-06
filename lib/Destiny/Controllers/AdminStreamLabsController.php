@@ -76,7 +76,7 @@ class AdminStreamLabsController extends AdminIntegrationController {
                 Session::setErrorBag('Test was unsuccessful');
             }
         } catch (Exception $e) {
-            Log::error($e);
+            Log::error($e->getTraceAsString());
             Session::setErrorBag("Test was unsuccessful. {$e->getMessage()}");
         }
         return 'redirect: /admin/streamlabs';

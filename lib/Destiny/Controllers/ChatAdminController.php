@@ -80,7 +80,7 @@ class ChatAdminController {
             return 'redirect: /admin/chat';
         } catch (Exception $e) {
             Session::setErrorBag($e->getMessage());
-            Log::error($e);
+            Log::error($e->getTraceAsString());
             return 'redirect: /admin/chat';
         }
         return 'admin/chat';

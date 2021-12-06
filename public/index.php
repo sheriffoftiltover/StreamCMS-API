@@ -16,7 +16,7 @@ use Destiny\Common\Request;
 use Destiny\Common\Utils\Http;
 use Doctrine\Common\Annotations\AnnotationReader;
 
-ini_set('session.gc_maxlifetime', 5 * 60 * 60);
+ini_set('session.gc_maxlifetime', (string) (5 * 60 * 60));
 
 require __DIR__ . '/../lib/boot.app.php';
 $app = Application::instance();

@@ -8,7 +8,7 @@ use Destiny\Common\Utils\Options;
 class OAuthResponse {
 
     public $authProvider = '';
-    public $authId = 0;
+    public $authId = '';
     public $authDetail = '';
     public $authEmail = '';
     public $accessToken = '';

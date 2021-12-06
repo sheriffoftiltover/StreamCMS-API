@@ -30,7 +30,7 @@ class GoogleAuthHandler extends AbstractAuthHandler {
             'state' => 'security_token=' . Session::getSessionId(),
             'client_id' => $conf ['client_id'],
             'redirect_uri' => sprintf($conf['redirect_uri'], $this->authProvider)
-        ], null, '&');
+        ]);
     }
 
     /**

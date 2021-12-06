@@ -40,7 +40,7 @@ class TwitchAuthHandler extends AbstractAuthHandler {
                 'force_verify'  => true,
                 'client_id'     => $conf['client_id'],
                 'redirect_uri'  => $conf['redirect_uri'],
-            ], null, '&');
+            ]);
     }
 
     /**

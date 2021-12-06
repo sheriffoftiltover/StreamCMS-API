@@ -27,7 +27,7 @@ class StreamLabsAuthHandler extends AbstractAuthHandler {
                 'scope'         => join(' ', $scope),
                 'client_id'     => $conf['client_id'],
                 'redirect_uri'  => $conf['redirect_uri']
-            ], null, '&');
+            ]);
     }
 
     /**
