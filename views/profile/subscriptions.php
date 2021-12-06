@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 namespace Destiny;
 use Destiny\Commerce\SubscriptionStatus;
 use Destiny\Common\Utils\Date;

@@ -1,4 +1,6 @@
 <?php
+declare(strict_types=1);
+
 namespace Destiny\Twitter;
 
 use Destiny\Common\Authentication\AbstractAuthHandler;

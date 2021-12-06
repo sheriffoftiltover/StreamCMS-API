@@ -1,4 +1,6 @@
 <?php
+declare(strict_types=1);
+
 namespace Destiny\Common;
 
 use Destiny\Common\Routing\Route;
@@ -22,29 +24,29 @@ use function GuzzleHttp\json_encode;
 /**
  * @method static Application instance()
  */
-class Application extends Service {
-
+class Application extends Service
+{
     /** @var CacheProvider */
     public $cache1 = null;
 
     /** @var CacheProvider */
     public $cache2 = null;
-    
+
     /** @var Connection */
     protected $dbal;
-    
+
     /** @var SessionInstance */
     protected $session = null;
-    
+
     /** @var Redis */
     protected $redis = null;
-    
+
     /** @var Router */
     protected $router = null;
 
     /** @var AuditLogger */
     protected $auditLogger = null;
-    
+
     /** @var callable */
     public $loader;
 
@@ -55,21 +57,25 @@ class Application extends Service {
     protected $sessionCookie = null;
 
     /** @return Connection */
-    public static function getDbConn(){
+    public static function getDbConn(): Connection
+    {
         return self::instance()->getDbal();
     }
 
     /** @return CacheProvider */
-    public static function getNsCache(){
+    public static function getNsCache(): CacheProvider
+    {
         return self::instance()->getCache1();
     }
 
     /** @return CacheProvider */
-    public static function getVerCache(){
+    public static function getVerCache(): CacheProvider
+    {
         return self::instance()->getCache2();
     }
 
-    public function executeRequest(Request $request) {
+    public function executeRequest(Request $request): void
+    {
         $response = new Response();
         $route = $this->router->findRoute($request);
         $model = new ViewModel ();
@@ -114,7 +120,7 @@ class Application extends Service {
                 $this->auditLogger->logRequest($request);
             }
             //
-            if($useResponseAsBody) {
+            if ($useResponseAsBody) {
                 // Use result as response body
                 $response->setBody($result);
             } else if (is_string($result)) {
@@ -129,13 +135,19 @@ class Application extends Service {
                     $response->setStatus(Http::STATUS_OK);
                     $response->setBody($this->template($result . '.php', $model));
                 }
-            } else if($result !== null) {
+            } else if ($result !== null) {
                 Log::critical("Invalid response " . var_export($result, true));
                 throw new Exception('invalidresponse');
             }
         } catch (Exception $e) {
             $id = RandomString::makeUrlSafe(12);
-            Log::error($e->getMessage(), ['trace' => $e->getTraceAsString(), 'guid' => $id]);
+            Log::error(
+                $e->getMessage(),
+                [
+                    'trace' => $e->getTraceAsString(),
+                    'guid' => $id
+                ]
+            );
             $model->code = Http::STATUS_ERROR;
             $model->error = $e;
             $model->id = $id;
@@ -143,7 +155,13 @@ class Application extends Service {
             $response->setBody($this->errorTemplate($model, $useResponseAsBody));
         } catch (\Exception $e) {
             $id = RandomString::makeUrlSafe(12);
-            Log::critical($e->getMessage(), ['trace' => $e->getTraceAsString(), 'guid' => $id]);
+            Log::critical(
+                $e->getMessage(),
+                [
+                    'trace' => $e->getTraceAsString(),
+                    'guid' => $id
+                ]
+            );
             $model->code = Http::STATUS_ERROR;
             $model->error = new Exception ('Application error', $e);
             $model->id = $id;
@@ -151,7 +169,13 @@ class Application extends Service {
             $response->setBody($this->errorTemplate($model, $useResponseAsBody));
         } catch (Error $e) {
             $id = RandomString::makeUrlSafe(12);
-            Log::critical($e->getMessage(), ['trace' => $e->getTraceAsString(), 'guid' => $id]);
+            Log::critical(
+                $e->getMessage(),
+                [
+                    'trace' => $e->getTraceAsString(),
+                    'guid' => $id
+                ]
+            );
             $model->code = Http::STATUS_ERROR;
             $model->error = new Exception ('Application error ' . $e->getMessage());
             $model->id = $id;
@@ -162,7 +186,8 @@ class Application extends Service {
         $this->handleResponse($response);
     }
 
-    private function handleResponse(Response $response) {
+    private function handleResponse(Response $response)
+    {
         $location = $response->getLocation();
         if (!empty ($location)) {
             Http::status(Http::STATUS_MOVED_TEMPORARY);
@@ -196,7 +221,9 @@ class Application extends Service {
      * @return mixed|null
      * @throws ReflectionException
      */
-    private function executeController(Route $route, Request $request, Response $response, ViewModel $model) {
+    private function executeController(Route $route, Request $request, Response $response, ViewModel $model)
+    {
+        // FIXME @sheriffoftiltover Figure out how this works..probably refactor it..
         $className = $route->getClass();
         $classMethod = $route->getClassMethod();
         $classReflection = new ReflectionClass($className);
@@ -224,18 +251,37 @@ class Application extends Service {
         return $methodReflection->invokeArgs($classInstance, $args);
     }
 
-    private function hasRouteSecurity(Route $route, SessionCredentials $credentials, Request $request): bool {
+    private function hasRouteSecurity(Route $route, SessionCredentials $credentials, Request $request): bool
+    {
         // has ANY role
         $secure = $route->getSecure();
         if (!empty ($secure)) {
-            if (!in_array(true, array_map(function($role) use ($credentials) { return $credentials->hasRole($role); }, $secure))) {
+            if (!in_array(
+                true,
+                array_map(
+                    function ($role) use ($credentials)
+                    {
+                        return $credentials->hasRole($role);
+                    },
+                    $secure
+                )
+            )) {
                 return false;
             }
         }
         // has ANY feature
         $features = $route->getFeature();
         if (!empty ($features)) {
-            if (!in_array(true, array_map(function($feature) use ($credentials) { return $credentials->hasFeature($feature); }, $features))) {
+            if (!in_array(
+                true,
+                array_map(
+                    function ($feature) use ($credentials)
+                    {
+                        return $credentials->hasFeature($feature);
+                    },
+                    $features
+                )
+            )) {
                 return false;
             }
         }
@@ -243,7 +289,16 @@ class Application extends Service {
         $keyNames = $route->getPrivateKeys();
         if (!empty($keyNames)) {
             $keyValue = self::getPrivateKeyValueFromRequest($request);
-            if (empty($keyValue) || !in_array(true, array_map(function($keyName) use ($keyValue) { return strcmp(Config::$a['privateKeys'][$keyName], $keyValue) === 0; }, $keyNames))) {
+            if (empty($keyValue) || !in_array(
+                    true,
+                    array_map(
+                        function ($keyName) use ($keyValue)
+                        {
+                            return strcmp(Config::$a['privateKeys'][$keyName], $keyValue) === 0;
+                        },
+                        $keyNames
+                    )
+                )) {
                 return false;
             }
         }
@@ -254,14 +309,16 @@ class Application extends Service {
      * Include a template and return the contents
      * @throws ViewModelException
      */
-    protected function template(string $filename, ViewModel $model) {
+    protected function template(string $filename, ViewModel $model)
+    {
         return $model->getContent($filename);
     }
 
     /**
      * @return string|array
      */
-    protected function errorTemplate(ViewModel $model, bool $useResponseAsBody = false) {
+    protected function errorTemplate(ViewModel $model, bool $useResponseAsBody = false)
+    {
         try {
             return $useResponseAsBody ? $model : $model->getContent('error.php');
         } catch (ViewModelException $e) {
@@ -272,7 +329,8 @@ class Application extends Service {
     /**
      * @return null|string
      */
-    public static function getPrivateKeyValueFromRequest(Request $request) {
+    public static function getPrivateKeyValueFromRequest(Request $request)
+    {
         $gets = $request->get();
         $posts = $request->post();
         return $gets['privatekey'] ?? $posts['privatekey'] ?? null;
@@ -281,7 +339,8 @@ class Application extends Service {
     /**
      * @return string|null
      */
-    public static function getPrivateKeyNameFromRequest(Request $request) {
+    public static function getPrivateKeyNameFromRequest(Request $request)
+    {
         $keyValue = self::getPrivateKeyValueFromRequest($request);
         foreach (Config::$a['privateKeys'] as $key => $value) {
             if ($value == $keyValue) {
@@ -291,71 +350,88 @@ class Application extends Service {
         return null;
     }
 
-    public function getDbal(): Connection {
+    public function getDbal(): Connection
+    {
         return $this->dbal;
     }
 
-    public function setDbal(Connection $dbal) {
+    public function setDbal(Connection $dbal)
+    {
         $this->dbal = $dbal;
     }
 
-    public function getCache1(): CacheProvider {
+    public function getCache1(): CacheProvider
+    {
         return $this->cache1;
     }
 
-    public function setCache1(CacheProvider $cache) {
+    public function setCache1(CacheProvider $cache)
+    {
         $this->cache1 = $cache;
     }
 
-    public function getCache2(): CacheProvider {
+    public function getCache2(): CacheProvider
+    {
         return $this->cache2;
     }
 
-    public function setCache2(CacheProvider $cache) {
+    public function setCache2(CacheProvider $cache)
+    {
         $this->cache2 = $cache;
     }
 
-    public function getSession() {
+    public function getSession()
+    {
         return $this->session;
     }
 
-    public function setSession(SessionInstance $session) {
+    public function setSession(SessionInstance $session)
+    {
         $this->session = $session;
     }
 
-    public function getRedis(): Redis {
+    public function getRedis(): Redis
+    {
         return $this->redis;
     }
 
-    public function setRedis(Redis $redis) {
+    public function setRedis(Redis $redis)
+    {
         $this->redis = $redis;
     }
 
-    public function setRouter(Router $router) {
+    public function setRouter(Router $router)
+    {
         $this->router = $router;
     }
 
-    public function setLoader($loader) {
+    public function setLoader($loader)
+    {
         $this->loader = $loader;
     }
 
-    public function setAuditLogger(AuditLogger $auditLogger) {
+    public function setAuditLogger(AuditLogger $auditLogger)
+    {
         $this->auditLogger = $auditLogger;
     }
 
-    public function setRememberMeCookie(Cookie $cookie) {
+    public function setRememberMeCookie(Cookie $cookie)
+    {
         $this->rememberMeCookie = $cookie;
     }
 
-    public function getRememberMeCookie(): Cookie {
+    public function getRememberMeCookie(): Cookie
+    {
         return $this->rememberMeCookie;
     }
 
-    public function setSessionCookie(Cookie $cookie) {
+    public function setSessionCookie(Cookie $cookie)
+    {
         $this->sessionCookie = $cookie;
     }
 
-    public function getSessionCookie(): Cookie {
+    public function getSessionCookie(): Cookie
+    {
         return $this->sessionCookie;
     }
 }

@@ -1,7 +1,8 @@
 <?php
+declare(strict_types=1);
+
 namespace Destiny\Chat;
 
-use Destiny\Chat\BanReasonParserFactory;
 use Destiny\Common\Application;
 use Destiny\Common\DBException;
 use Destiny\Common\Service;
@@ -11,17 +12,22 @@ use PDO;
 /**
  * @method static ChatBanService instance()
  */
-class ChatBanService extends Service {
+class ChatBanService extends Service
+{
 
     /**
-     * @return array|false
      * @throws DBException
      */
-    public function getUserActiveBan(int $userId, string $ipaddress = null) {
+    public function getUserActiveBan(int $userId, string|null $ipAddress = null): array
+    {
         try {
             $conn = Application::getDbConn();
-            if(empty($ipaddress)) {
-                $stmt = $conn->prepare('
+            $params = [
+                'userId' => $userId,
+            ];
+            if (empty($ipaddress)) {
+                $stmt = $conn->prepare(
+                    '
                   SELECT
                     b.id,
                     b.userid,
@@ -43,10 +49,11 @@ class ChatBanService extends Service {
                   GROUP BY b.targetuserid
                   ORDER BY b.id DESC
                   LIMIT 0,1
-                ');
-                $stmt->bindValue('userId', $userId, PDO::PARAM_INT);
+                '
+                );
             } else {
-                $stmt = $conn->prepare('
+                $stmt = $conn->prepare(
+                    '
                   SELECT
                     b.id,
                     b.userid,
@@ -63,17 +70,17 @@ class ChatBanService extends Service {
                     INNER JOIN dfl_users AS u2 ON u2.userId = b.targetuserid
                   WHERE 
                     b.starttimestamp < NOW() AND 
-                    (b.targetuserid = :userId OR b.ipaddress = :ipaddress) AND
+                    (b.targetuserid = :userId OR b.ipaddress = :ipAddress) AND
                     (b.endtimestamp > NOW() OR b.endtimestamp IS NULL)
                   GROUP BY b.targetuserid
                   ORDER BY b.id DESC
                   LIMIT 0,1
-                ');
-                $stmt->bindValue('userId', $userId, PDO::PARAM_INT);
-                $stmt->bindValue('ipaddress', $ipaddress, PDO::PARAM_STR);
+                '
+                );
+                $params['ipAddress'] = $ipAddress;
             }
-            $stmt->execute();
-            return $stmt->fetch();
+            $stmt->execute($params);
+            return $stmt->fetch() ?: [];
         } catch (DBALException $e) {
             throw new DBException("Error returning user ban.", $e);
         }
@@ -82,13 +89,16 @@ class ChatBanService extends Service {
     /**
      * @throws DBException
      */
-    public function removeUserBan(int $userid): int {
+    public function removeUserBan(int $userid): int
+    {
         try {
             $conn = Application::getDbConn();
-            $stmt = $conn->prepare("
+            $stmt = $conn->prepare(
+                "
               UPDATE bans SET endtimestamp = NOW()
               WHERE targetuserid = :targetuserid AND (endtimestamp IS NULL OR endtimestamp >= NOW())
-            ");
+            "
+            );
             $stmt->bindValue('targetuserid', $userid, PDO::PARAM_INT);
             $stmt->execute();
             return $stmt->rowCount();
@@ -100,7 +110,8 @@ class ChatBanService extends Service {
     /**
      * @throws DBException
      */
-    public function insertBan(array $ban): int {
+    public function insertBan(array $ban): int
+    {
         try {
             $conn = Application::getDbConn();
             $conn->insert('bans', $ban);
@@ -113,7 +124,8 @@ class ChatBanService extends Service {
     /**
      * @throws DBException
      */
-    public function updateBan(array $ban) {
+    public function updateBan(array $ban)
+    {
         try {
             $conn = Application::getDbConn();
             $conn->update('bans', $ban, ['id' => $ban ['id']]);
@@ -133,10 +145,12 @@ class ChatBanService extends Service {
      *
      * @throws DBException
      */
-    public function updateActiveBansForUser(int $userId, string $reason, string $startTimestamp, string $endTimestamp = null) {
+    public function updateActiveBansForUser(int $userId, string $reason, string $startTimestamp, string $endTimestamp = null)
+    {
         try {
             $conn = Application::getDbConn();
-            $stmt = $conn->prepare('
+            $stmt = $conn->prepare(
+                '
               UPDATE
                 bans
               SET
@@ -146,7 +160,8 @@ class ChatBanService extends Service {
               WHERE
                 targetuserid = :userId AND
                 (endtimestamp IS NULL OR endtimestamp >= NOW())
-            ');
+            '
+            );
 
             $stmt->bindValue('reason', $reason, PDO::PARAM_STR);
             $stmt->bindValue('startTimestamp', $startTimestamp, PDO::PARAM_STR);
@@ -163,10 +178,12 @@ class ChatBanService extends Service {
      * @return array|false
      * @throws DBException
      */
-    public function getBanById(int $banId) {
+    public function getBanById(int $banId)
+    {
         try {
             $conn = Application::getDbConn();
-            $stmt = $conn->prepare('
+            $stmt = $conn->prepare(
+                '
               SELECT
                 b.id,
                 b.userid,
@@ -184,7 +201,8 @@ class ChatBanService extends Service {
               WHERE b.id = :id
               ORDER BY b.id DESC
               LIMIT 0,1
-            ');
+            '
+            );
             $stmt->bindValue('id', $banId, PDO::PARAM_INT);
             $stmt->execute();
             return $stmt->fetch();
@@ -196,10 +214,12 @@ class ChatBanService extends Service {
     /**
      * @throws DBException
      */
-    public function getActiveBans(): array {
+    public function getActiveBans(): array
+    {
         try {
             $conn = Application::getDbConn();
-            $stmt = $conn->prepare("
+            $stmt = $conn->prepare(
+                "
                 SELECT
                     b.id AS banid,
                     b.starttimestamp,
@@ -223,7 +243,8 @@ class ChatBanService extends Service {
                     b.targetuserid = tu.userId
 		GROUP BY targetuserid
                 ORDER BY b.id DESC
-            ");
+            "
+            );
             $stmt->execute();
             return $stmt->fetchAll();
         } catch (DBALException $e) {
@@ -237,7 +258,8 @@ class ChatBanService extends Service {
      *
      * @throws DBException
      */
-    public function purgeBans() {
+    public function purgeBans()
+    {
         try {
             $conn = Application::getDbConn();
             $stmt = $conn->prepare('TRUNCATE TABLE bans');
@@ -250,16 +272,18 @@ class ChatBanService extends Service {
     /**
      * Returns all bans for a user, active and expired, sorted by ID (most
      * recent first).
-     * 
+     *
      * @param int $userId ID of the banned user.
      * @param int $limit The max number of bans to get.
      *
      * @throws DBException
      */
-    public function getBansForUser(int $userId, int $limit): array { 
+    public function getBansForUser(int $userId, int $limit): array
+    {
         try {
             $conn = Application::getDbConn();
-            $stmt = $conn->prepare('
+            $stmt = $conn->prepare(
+                '
                   SELECT
                     b.id,
                     u.username AS banningusername,
@@ -279,7 +303,8 @@ class ChatBanService extends Service {
                   GROUP BY b.reason, b.starttimestamp, b.endtimestamp
                   ORDER BY b.id DESC
                   LIMIT :amount
-            ');
+            '
+            );
             $stmt->bindValue('userId', $userId, PDO::PARAM_INT);
             $stmt->bindValue('amount', $limit, PDO::PARAM_INT);
             $stmt->execute();
@@ -287,7 +312,13 @@ class ChatBanService extends Service {
             $bans = $stmt->fetchAll();
 
             $parser = BanReasonParserFactory::create();
-            $bans = array_map(function($b) use ($parser) { return $parser->transformBan($b); }, $bans);
+            $bans = array_map(
+                function ($b) use ($parser)
+                {
+                    return $parser->transformBan($b);
+                },
+                $bans
+            );
 
             return $bans;
         } catch (DBALException $e) {
@@ -295,7 +326,8 @@ class ChatBanService extends Service {
         }
     }
 
-    public function isPermanentBan(array $ban): bool {
+    public function isPermanentBan(array $ban): bool
+    {
         // Permanent bans don't have an `endtimestamp`.
         return empty($ban['endtimestamp']);
     }

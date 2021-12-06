@@ -1,4 +1,6 @@
 <?php
+declare(strict_types=1);
+
 namespace Destiny\Controllers;
 
 use Destiny\Chat\ChatBanService;
@@ -6,12 +8,6 @@ use Destiny\Chat\ChatRedisService;
 use Destiny\Commerce\StatisticsService;
 use Destiny\Commerce\SubscriptionsService;
 use Destiny\Commerce\SubscriptionStatus;
-use Destiny\Common\Annotation\Audit;
-use Destiny\Common\Annotation\Controller;
-use Destiny\Common\Annotation\HttpMethod;
-use Destiny\Common\Annotation\ResponseBody;
-use Destiny\Common\Annotation\Route;
-use Destiny\Common\Annotation\Secure;
 use Destiny\Common\Application;
 use Destiny\Common\Config;
 use Destiny\Common\Exception;
@@ -27,7 +23,8 @@ use Destiny\Common\ViewModel;
 /**
  * @Controller
  */
-class AdminController {
+class AdminController
+{
 
     /**
      * @Route ("/admin")
@@ -35,18 +32,15 @@ class AdminController {
      *
      * @return string
      */
-    public function admin() {
+    public function admin(): string
+    {
+        // FIXME @sheriffoftiltover Recode this
         if (Session::hasRole(UserRole::FINANCE))
-            return 'redirect: /admin/income';
-        else if (Session::hasRole(UserRole::MODERATOR))
-            return 'redirect: /admin/moderation';
-        else if (Session::hasRole(UserRole::EMOTES))
-            return 'redirect: /admin/emotes';
-        else if (Session::hasRole(UserRole::FLAIRS))
-            return 'redirect: /admin/flairs';
-        else if (Session::hasRole(UserRole::ADMIN))
-            return 'redirect: /admin/dashboard';
-        else
+            return 'redirect: /admin/income'; else if (Session::hasRole(UserRole::MODERATOR))
+            return 'redirect: /admin/moderation'; else if (Session::hasRole(UserRole::EMOTES))
+            return 'redirect: /admin/emotes'; else if (Session::hasRole(UserRole::FLAIRS))
+            return 'redirect: /admin/flairs'; else if (Session::hasRole(UserRole::ADMIN))
+            return 'redirect: /admin/dashboard'; else
             return 'redirect: /'; // need an admin dashboard
     }
 
@@ -58,7 +52,8 @@ class AdminController {
      * @param ViewModel $model
      * @return string
      */
-    public function income(ViewModel $model) {
+    public function income(ViewModel $model): string
+    {
         $model->subInfo = [
             [
                 'tierLabel' => 'Tier I',
@@ -93,7 +88,8 @@ class AdminController {
      * @param ViewModel $model
      * @return string
      */
-    public function moderation(ViewModel $model) {
+    public function moderation(ViewModel $model): string
+    {
         $model->title = 'Moderation';
         return 'admin/moderation';
     }
@@ -104,7 +100,8 @@ class AdminController {
      *
      * @throws Exception
      */
-    public function listSubscriptions(ViewModel $model, array $params): string {
+    public function listSubscriptions(ViewModel $model, array $params): string
+    {
         if (empty($params['page'])) {
             $params['page'] = 1;
         }
@@ -126,7 +123,12 @@ class AdminController {
         $subService = SubscriptionsService::instance();
         $model->title = 'Subscribers';
         $model->subscriptions = $subService->searchAll($params);
-        $model->sizes = [50, 100, 250, 500];
+        $model->sizes = [
+            50,
+            100,
+            250,
+            500
+        ];
         $model->search = $params['search'];
         $model->recurring = $params['recurring'];
         $model->status = $params['status'];
@@ -150,7 +152,8 @@ class AdminController {
      *
      * @throws Exception
      */
-    public function listUsers(array $params, ViewModel $model): string {
+    public function listUsers(array $params, ViewModel $model): string
+    {
         if (empty($params ['page'])) {
             $params['page'] = 1;
         }
@@ -182,9 +185,19 @@ class AdminController {
         $model->user = Session::getCredentials()->getData();
         $model->features = $userService->getAllFeatures();
         $model->roles = $userService->getAllRoles();
-        $model->statuses = ['All', UserStatus::ACTIVE, UserStatus::REDACTED, UserStatus::DELETED];
+        $model->statuses = [
+            'All',
+            UserStatus::ACTIVE,
+            UserStatus::REDACTED,
+            UserStatus::DELETED
+        ];
         $model->users = $userService->searchAll($params);
-        $model->sizes = [50, 100, 250, 500];
+        $model->sizes = [
+            50,
+            100,
+            250,
+            500
+        ];
         $model->size = $params ['size'];
         $model->page = $params ['page'];
         $model->sort = $params ['sort'];
@@ -203,7 +216,8 @@ class AdminController {
      *
      * @throws Exception
      */
-    public function adminBans(ViewModel $model): string {
+    public function adminBans(ViewModel $model): string
+    {
         $model->activeBans = ChatBanService::instance()->getActiveBans();
         $model->title = 'Active Bans';
         return 'admin/bans';
@@ -216,7 +230,8 @@ class AdminController {
      *
      * @throws Exception
      */
-    public function adminPurgeBans(): string {
+    public function adminPurgeBans(): string
+    {
         ChatRedisService::instance()->sendPurgeBans();
         ChatBanService::instance()->purgeBans();
         return 'redirect: /admin/bans';
@@ -227,7 +242,8 @@ class AdminController {
      * @Secure ({"MODERATOR"})
      * @ResponseBody
      */
-    public function chartUsersData(array $params) {
+    public function chartUsersData(array $params): array
+    {
         $statisticsService = StatisticsService::instance();
         $cacheDriver = Application::getNsCache();
         $data = [];
@@ -305,10 +321,9 @@ class AdminController {
      * @Route ("/admin/chart/finance/{type}")
      * @Secure ({"FINANCE"})
      * @ResponseBody
-     *
-     * @return array|false
      */
-    public function chartFinanceData(array $params) {
+    public function chartFinanceData(array $params): array|false
+    {
         $statisticsService = StatisticsService::instance();
         $cacheDriver = Application::getNsCache();
         $data = [];
@@ -423,7 +438,8 @@ class AdminController {
      * @HttpMethod ({"GET"})
      * @throws Exception
      */
-    public function auditLogList(ViewModel $model): string {
+    public function auditLogList(ViewModel $model): string
+    {
         $userService = UserService::instance();
         $model->logs = $userService->getAuditLog();
         return 'admin/auditlog';

@@ -1,4 +1,6 @@
 <?php
+declare(strict_types=1);
+
 namespace Destiny\Controllers;
 
 use Destiny\Chat\EmoteService;
@@ -138,7 +140,7 @@ class AdminThemesController {
      * @HttpMethod ({"POST"})
      * @Audit
      */
-    public function deleteTheme(array $params) {
+    public function deleteTheme(array $params): string {
         try {
             FilterParams::required($params, 'id');
             $themeService = ThemeService::instance();

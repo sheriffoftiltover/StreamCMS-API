@@ -1,4 +1,6 @@
 <?php
+declare(strict_types=1);
+
 namespace Destiny\Controllers;
 
 use Destiny\Chat\ChatBanService;
@@ -6,11 +8,6 @@ use Destiny\Chat\ChatRedisService;
 use Destiny\Commerce\OrdersService;
 use Destiny\Commerce\SubscriptionsService;
 use Destiny\Commerce\SubscriptionStatus;
-use Destiny\Common\Annotation\Audit;
-use Destiny\Common\Annotation\Controller;
-use Destiny\Common\Annotation\HttpMethod;
-use Destiny\Common\Annotation\Route;
-use Destiny\Common\Annotation\Secure;
 use Destiny\Common\Application;
 use Destiny\Common\Authentication\AuthenticationService;
 use Destiny\Common\Config;
@@ -21,7 +18,6 @@ use Destiny\Common\Session\Session;
 use Destiny\Common\User\UserAuthService;
 use Destiny\Common\User\UserRole;
 use Destiny\Common\User\UserService;
-use Destiny\Common\Utils\Country;
 use Destiny\Common\Utils\Date;
 use Destiny\Common\Utils\FilterParams;
 use Destiny\Common\ViewModel;
@@ -32,20 +28,29 @@ use Doctrine\DBAL\DBALException;
 /**
  * @Controller
  */
-class AdminUserController {
+class AdminUserController
+{
 
     /**
      * Get only roles that your security level allows for you to
      * apply to other users.
      * @throws DBException
      */
-    private function getAllowedRoles() {
+    private function getAllowedRoles(): array
+    {
         $userService = UserService::instance();
         $roles = $userService->getAllRoles();
-        $exclude = ['USER','SUBSCRIBER'];
-        return array_filter($roles, function($v) use ($exclude) {
-            return !in_array($v['roleName'], $exclude);
-        });
+        $exclude = [
+            'USER',
+            'SUBSCRIBER'
+        ];
+        return array_filter(
+            $roles,
+            function ($v) use ($exclude)
+            {
+                return !in_array($v['roleName'], $exclude);
+            }
+        );
     }
 
     /**
@@ -54,7 +59,8 @@ class AdminUserController {
      * @HttpMethod ({"GET"})
      * @throws Exception
      */
-    public function adminUserEdit(array $params, ViewModel $model): string {
+    public function adminUserEdit(array $params, ViewModel $model): string
+    {
         FilterParams::required($params, 'id');
         $user = UserService::instance()->getUserById($params ['id']);
         if (empty ($user)) {
@@ -83,7 +89,15 @@ class AdminUserController {
 
         $bans = $chatBanService->getBansForUser($userId, 10);
         $model->bans = $bans;
-        $model->hasActiveBan = !empty($bans) && (count(array_filter($bans, function($ban) { return $ban['active']; })) > 0);
+        $model->hasActiveBan = !empty($bans) && (count(
+                    array_filter(
+                        $bans,
+                        function ($ban)
+                        {
+                            return $ban['active'];
+                        }
+                    )
+                ) > 0);
 
         $gifters = [];
         $recipients = [];
@@ -112,7 +126,8 @@ class AdminUserController {
      * @throws Exception
      * @throws DBALException
      */
-    public function adminUserEditProcess(array $params): string {
+    public function adminUserEditProcess(array $params): string
+    {
         FilterParams::required($params, 'id');
         $authService = AuthenticationService::instance();
         $userService = UserService::instance();
@@ -154,23 +169,19 @@ class AdminUserController {
         }
 
         if (empty($minecraftname))
-            $minecraftname = null;
-        else if (mb_strlen($minecraftname) > 16)
+            $minecraftname = null; else if (mb_strlen($minecraftname) > 16)
             $minecraftname = mb_substr($minecraftname, 0, 16);
 
         if (empty($minecraftuuid))
-            $minecraftuuid = null;
-        else if (mb_strlen($minecraftuuid) > 36)
+            $minecraftuuid = null; else if (mb_strlen($minecraftuuid) > 36)
             $minecraftuuid = mb_substr($minecraftuuid, 0, 36);
 
         if (empty($discordname))
-            $discordname = null;
-        else if (mb_strlen($discordname) > 36)
+            $discordname = null; else if (mb_strlen($discordname) > 36)
             $discordname = mb_substr($discordname, 0, 36);
 
         if (empty($discorduuid))
-            $discorduuid = null;
-        else if (mb_strlen($discorduuid) > 36)
+            $discorduuid = null; else if (mb_strlen($discorduuid) > 36)
             $discorduuid = mb_substr($discorduuid, 0, 36);
 
         $mUid = $userService->getUserIdByField('minecraftname', $params['minecraftname']);
@@ -231,7 +242,8 @@ class AdminUserController {
      *
      * @throws Exception
      */
-    public function toggleUserFlair(array $params) {
+    public function toggleUserFlair(array $params)
+    {
         FilterParams::required($params, 'userId');
         FilterParams::declared($params, 'value');
         FilterParams::required($params, 'name');
@@ -256,7 +268,8 @@ class AdminUserController {
      *
      * @throws Exception
      */
-    public function toggleUserRole(array $params) {
+    public function toggleUserRole(array $params)
+    {
         FilterParams::required($params, 'userId');
         FilterParams::declared($params, 'value');
         FilterParams::required($params, 'name');
@@ -280,7 +293,8 @@ class AdminUserController {
      *
      * @throws Exception
      */
-    public function subscriptionAdd(array $params, ViewModel $model): string {
+    public function subscriptionAdd(array $params, ViewModel $model): string
+    {
         FilterParams::required($params, 'id');
         $userService = UserService::instance();
         $model->user = $userService->getUserById($params['id']);
@@ -306,7 +320,8 @@ class AdminUserController {
      *
      * @throws Exception
      */
-    public function subscriptionEdit(array $params, ViewModel $model): string {
+    public function subscriptionEdit(array $params, ViewModel $model): string
+    {
         FilterParams::required($params, 'id');
         FilterParams::required($params, 'subscriptionId');
 
@@ -339,7 +354,8 @@ class AdminUserController {
      *
      * @throws Exception
      */
-    public function subscriptionSave(array $params): string {
+    public function subscriptionSave(array $params): string
+    {
         FilterParams::required($params, 'subscriptionType');
         FilterParams::required($params, 'status');
         FilterParams::required($params, 'createdDate');
@@ -389,7 +405,9 @@ class AdminUserController {
         $authService = AuthenticationService::instance();
         $authService->flagUserForUpdate($params['id']);
 
-        return 'redirect: /admin/user/' . urlencode($params['id']) . '/subscription/' . urlencode($subscriptionId) . '/edit';
+        return 'redirect: /admin/user/' . urlencode($params['id']) . '/subscription/' . urlencode(
+                $subscriptionId
+            ) . '/edit';
     }
 
     /**
@@ -400,9 +418,10 @@ class AdminUserController {
      *
      * @throws DBException
      */
-    public function deleteAuthProfile(array $params): string {
-        $userId = (int) $params['id'];
-        $authId = (int) $params['providerId'];
+    public function deleteAuthProfile(array $params): string
+    {
+        $userId = (int)$params['id'];
+        $authId = (int)$params['providerId'];
         $userAuthService = UserAuthService::instance();
         $userAuthService->removeById($authId);
         Session::setSuccessBag('Authentication profile removed!');
@@ -416,7 +435,8 @@ class AdminUserController {
      *
      * @throws Exception
      */
-    public function addBan(array $params, ViewModel $model): string {
+    public function addBan(array $params, ViewModel $model): string
+    {
         FilterParams::required($params, 'userId');
         $userService = UserService::instance();
         $user = $userService->getUserById($params['userId']);
@@ -441,7 +461,8 @@ class AdminUserController {
      *
      * @throws Exception
      */
-    public function banUser(array $params): string {
+    public function banUser(array $params): string
+    {
         FilterParams::required($params, 'userId');
         $userId = intval($params['userId']);
         $ban = [];
@@ -468,7 +489,8 @@ class AdminUserController {
      *
      * @throws DBException
      */
-    public function banUsers(array $params) {
+    public function banUsers(array $params): string
+    {
 
         try {
             FilterParams::isArray($params, 'selected');
@@ -511,7 +533,8 @@ class AdminUserController {
      *
      * @throws Exception
      */
-    public function editBan(array $params, ViewModel $model): string {
+    public function editBan(array $params, ViewModel $model): string
+    {
         FilterParams::required($params, 'userId');
         $userService = UserService::instance();
         $chatBanService = ChatBanService::instance();
@@ -533,7 +556,8 @@ class AdminUserController {
      *
      * @throws Exception
      */
-    public function updateBan(array $params): string {
+    public function updateBan(array $params): string
+    {
         FilterParams::required($params, 'userId');
 
         $redirect = "redirect: /admin/user/{$params['userId']}/ban/edit";
@@ -568,7 +592,8 @@ class AdminUserController {
      *
      * @throws Exception
      */
-    public function removeBan(array $params): string {
+    public function removeBan(array $params): string
+    {
         FilterParams::required($params, 'userId');
 
         $chatBanService = ChatBanService::instance();
@@ -594,7 +619,8 @@ class AdminUserController {
      *
      * @throws DBException
      */
-    public function deleteUser(array $params, Request $request): string {
+    public function deleteUser(array $params, Request $request): string
+    {
         $userId = intval($params['userId']);
         try {
             $googleRecaptchaHandler = new GoogleRecaptchaHandler();
@@ -617,12 +643,23 @@ class AdminUserController {
         $authService->flagUserForUpdate($userId);
 
         $creds = Session::getCredentials();
-        DiscordMessenger::send('User deleted', [
-            'fields' => [
-                ['title' => 'User', 'value' => DiscordMessenger::userLink($user['userId'], $user['username']), 'short' => false],
-                ['title' => 'By', 'value' => DiscordMessenger::userLink($creds->getUserId(), $creds->getUsername()), 'short' => false],
+        DiscordMessenger::send(
+            'User deleted',
+            [
+                'fields' => [
+                    [
+                        'title' => 'User',
+                        'value' => DiscordMessenger::userLink($user['userId'], $user['username']),
+                        'short' => false
+                    ],
+                    [
+                        'title' => 'By',
+                        'value' => DiscordMessenger::userLink($creds->getUserId(), $creds->getUsername()),
+                        'short' => false
+                    ],
+                ]
             ]
-        ]);
+        );
 
         Session::setSuccessBag('User deleted');
         return "redirect: /admin/user/$userId/edit";
@@ -636,7 +673,8 @@ class AdminUserController {
      *
      * @throws DBException
      */
-    public function deleteUsers(array $params, Request $request) {
+    public function deleteUsers(array $params, Request $request): string
+    {
         try {
             $googleRecaptchaHandler = new GoogleRecaptchaHandler();
             $googleRecaptchaHandler->resolveWithRequest($request);
@@ -648,9 +686,13 @@ class AdminUserController {
 
         $userService = UserService::instance();
         $authService = AuthenticationService::instance();
-        $users = array_map(function($v) use($userService) {
-            return $userService->getUserById((int) $v);
-        }, $params['selected']);
+        $users = array_map(
+            function ($v) use ($userService)
+            {
+                return $userService->getUserById((int)$v);
+            },
+            $params['selected']
+        );
 
         $fields = [];
         foreach ($users as $user) {
@@ -668,7 +710,11 @@ class AdminUserController {
         }
 
         $creds = Session::getCredentials();
-        $fields = ['title' => 'By', 'value' => DiscordMessenger::userLink($creds->getUserId(), $creds->getUsername()), 'short' => false];
+        $fields = [
+            'title' => 'By',
+            'value' => DiscordMessenger::userLink($creds->getUserId(), $creds->getUsername()),
+            'short' => false
+        ];
         DiscordMessenger::send('Users deleted', ['fields' => $fields]);
 
         Session::setSuccessBag('Users deleted');

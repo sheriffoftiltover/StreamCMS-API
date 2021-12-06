@@ -1,4 +1,6 @@
 <?php
+declare(strict_types=1);
+
 namespace Destiny\Controllers;
 
 use Destiny\Common\AdminIntegrationController;

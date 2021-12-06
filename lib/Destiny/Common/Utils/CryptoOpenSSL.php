@@ -1,4 +1,6 @@
 <?php
+declare(strict_types=1);
+
 namespace Destiny\Common\Utils;
 /*
  * This class attempts to follow the recommendations from

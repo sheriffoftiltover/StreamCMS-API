@@ -1,4 +1,6 @@
 <?php
+declare(strict_types=1);
+
 use Destiny\Common\Application;
 use Destiny\Common\AuditLogger;
 use Destiny\Common\Config;

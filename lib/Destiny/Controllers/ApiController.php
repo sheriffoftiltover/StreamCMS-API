@@ -1,11 +1,8 @@
 <?php
+declare(strict_types=1);
+
 namespace Destiny\Controllers;
 
-use Destiny\Common\Annotation\Controller;
-use Destiny\Common\Annotation\HttpMethod;
-use Destiny\Common\Annotation\PrivateKey;
-use Destiny\Common\Annotation\ResponseBody;
-use Destiny\Common\Annotation\Route;
 use Destiny\Common\Application;
 use Destiny\Common\Authentication\AuthenticationService;
 use Destiny\Common\Authentication\AuthProvider;
@@ -24,7 +21,8 @@ use Destiny\Common\Utils\Http;
 /**
  * @Controller
  */
-class ApiController {
+class ApiController
+{
 
     /**
      * @Route("/api/userinfo")
@@ -34,7 +32,8 @@ class ApiController {
      * @return SessionCredentials|array
      * @throws Exception
      */
-    public function userInfo(array $params) {
+    public function userInfo(array $params): SessionCredentials|array
+    {
         FilterParams::required($params, 'token');
         $token = trim($params['token']);
         $oauthService = DggOAuthService::instance();
@@ -86,11 +85,10 @@ class ApiController {
      * @HttpMethod ({"GET"})
      * @PrivateKey ({"api","reddit","minecraft"})
      * @ResponseBody
-     *
-     * @return array|SessionCredentials
      * @throws Exception
      */
-    public function apiUserByField(Response $response, Request $request, array $params) {
+    public function apiUserByField(Response $response, Request $request, array $params): array|SessionCredentials
+    {
         $userid = null;
         try {
             $userService = UserService::instance();
@@ -103,10 +101,16 @@ class ApiController {
                         $userid = $params['userid'];
                     } else if (isset($params['discordid'])) {
                         FilterParams::required($params, 'discordid');
-                        $userid = $userAuthService->getUserIdByAuthIdAndProvider($params['discordid'], AuthProvider::DISCORD);
+                        $userid = $userAuthService->getUserIdByAuthIdAndProvider(
+                            $params['discordid'],
+                            AuthProvider::DISCORD
+                        );
                     } else if (isset($params['discordusername'])) {
                         FilterParams::required($params, 'discordusername');
-                        $userid = $userAuthService->getUserIdByAuthDetail($params['discordusername'], AuthProvider::DISCORD);
+                        $userid = $userAuthService->getUserIdByAuthDetail(
+                            $params['discordusername'],
+                            AuthProvider::DISCORD
+                        );
                     } else if (isset($params['discordname'])) {
                         FilterParams::required($params, 'discordname');
                         $userid = $userService->getUserIdByField('discordname', $params['discordname']);
@@ -121,10 +125,17 @@ class ApiController {
                         $userid = $userAuthService->getUserIdByAuthDetail($params['redditname'], AuthProvider::REDDIT);
                     } else if (isset($params['redditid'])) {
                         FilterParams::required($params, 'redditid');
-                        $userid = $userAuthService->getUserIdByAuthIdAndProvider($params['redditid'], AuthProvider::REDDIT);
+                        $userid = $userAuthService->getUserIdByAuthIdAndProvider(
+                            $params['redditid'],
+                            AuthProvider::REDDIT
+                        );
                     } else {
                         $response->setStatus(Http::STATUS_BAD_REQUEST);
-                        return ['message' => 'No field specified', 'error' => 'fielderror', 'code' => Http::STATUS_BAD_REQUEST];
+                        return [
+                            'message' => 'No field specified',
+                            'error' => 'fielderror',
+                            'code' => Http::STATUS_BAD_REQUEST
+                        ];
                     }
                     break;
 
@@ -134,7 +145,11 @@ class ApiController {
                         $userid = $userService->getUserIdByField('minecraftname', $params['minecraftname']);
                     } else {
                         $response->setStatus(Http::STATUS_BAD_REQUEST);
-                        return ['message' => 'No field specified', 'error' => 'fielderror', 'code' => Http::STATUS_BAD_REQUEST];
+                        return [
+                            'message' => 'No field specified',
+                            'error' => 'fielderror',
+                            'code' => Http::STATUS_BAD_REQUEST
+                        ];
                     }
                     break;
 
@@ -144,20 +159,35 @@ class ApiController {
                         $userid = $userAuthService->getUserIdByAuthDetail($params['redditname'], AuthProvider::REDDIT);
                     } else if (isset($params['redditid'])) {
                         FilterParams::required($params, 'redditid');
-                        $userid = $userAuthService->getUserIdByAuthIdAndProvider($params['redditid'], AuthProvider::REDDIT);
+                        $userid = $userAuthService->getUserIdByAuthIdAndProvider(
+                            $params['redditid'],
+                            AuthProvider::REDDIT
+                        );
                     } else {
                         $response->setStatus(Http::STATUS_BAD_REQUEST);
-                        return ['message' => 'No field specified', 'error' => 'fielderror', 'code' => Http::STATUS_BAD_REQUEST];
+                        return [
+                            'message' => 'No field specified',
+                            'error' => 'fielderror',
+                            'code' => Http::STATUS_BAD_REQUEST
+                        ];
                     }
                     break;
             }
         } catch (FilterParamsException $e) {
             $response->setStatus(Http::STATUS_BAD_REQUEST);
-            return ['message' => $e->getMessage(), 'error' => 'fielderror', 'code' => Http::STATUS_BAD_REQUEST];
+            return [
+                'message' => $e->getMessage(),
+                'error' => 'fielderror',
+                'code' => Http::STATUS_BAD_REQUEST
+            ];
         } catch (Exception $e) {
             Log::error("Internal error $e");
             $response->setStatus(Http::STATUS_BAD_REQUEST);
-            return ['message' => 'Server error', 'error' => 'server', 'code' => Http::STATUS_BAD_REQUEST];
+            return [
+                'message' => 'Server error',
+                'error' => 'server',
+                'code' => Http::STATUS_BAD_REQUEST
+            ];
         }
 
         if (!empty($userid)) {
@@ -170,7 +200,11 @@ class ApiController {
         }
 
         $response->setStatus(Http::STATUS_ERROR);
-        return ['message' => 'User not found', 'error' => 'usernotfound', 'code' => Http::STATUS_NOT_FOUND];
+        return [
+            'message' => 'User not found',
+            'error' => 'usernotfound',
+            'code' => Http::STATUS_NOT_FOUND
+        ];
     }
 
     /**
@@ -184,34 +218,53 @@ class ApiController {
      * @Route ("/api/auth")
      * @ResponseBody
      * @PrivateKey ({"api","chat"})
-     *
-     * @return SessionCredentials|array
      * @throws Exception
      */
-    public function userByAuthToken(Response $response, array $params) {
+    public function userByAuthToken(Response $response, array $params): array|SessionCredentials
+    {
         if (!isset ($params ['authtoken']) || empty ($params ['authtoken'])) {
             $response->setStatus(Http::STATUS_FORBIDDEN);
-            return ['message' => 'Invalid or empty authToken', 'error' => 'fielderror', 'code' => Http::STATUS_FORBIDDEN];
+            return [
+                'message' => 'Invalid or empty authToken',
+                'error' => 'fielderror',
+                'code' => Http::STATUS_FORBIDDEN
+            ];
         }
         $oauthService = DggOAuthService::instance();
         $accessToken = $oauthService->getAccessTokenByToken($params['authtoken']);
         if (empty ($accessToken)) {
             $response->setStatus(Http::STATUS_FORBIDDEN);
-            return ['message' => 'Auth token not found', 'error' => 'invalidtoken', 'code' => Http::STATUS_FORBIDDEN];
+            return [
+                'message' => 'Auth token not found',
+                'error' => 'invalidtoken',
+                'code' => Http::STATUS_FORBIDDEN
+            ];
         }
         if (!empty($accessToken['clientId']) /* ONLY ALLOW CLIENT-LESS ACCESS KEYS */) {
             $response->setStatus(Http::STATUS_FORBIDDEN);
-            return ['message' => 'Only DGG Login Keys can be used', 'error' => 'invalidtoken', 'code' => Http::STATUS_FORBIDDEN];
+            return [
+                'message' => 'Only DGG Login Keys can be used',
+                'error' => 'invalidtoken',
+                'code' => Http::STATUS_FORBIDDEN
+            ];
         }
         if ($oauthService->hasAccessTokenExpired($accessToken)) {
             $response->setStatus(Http::STATUS_FORBIDDEN);
-            return ['message' => 'Access token expired', 'error' => 'expiredtoken', 'code' => Http::STATUS_FORBIDDEN];
+            return [
+                'message' => 'Access token expired',
+                'error' => 'expiredtoken',
+                'code' => Http::STATUS_FORBIDDEN
+            ];
         }
         $userService = UserService::instance();
         $user = $userService->getUserById($accessToken['userId']);
         if (empty ($user)) {
             $response->setStatus(Http::STATUS_FORBIDDEN);
-            return ['message' => 'User not found', 'error' => 'usernotfound', 'code' => Http::STATUS_FORBIDDEN];
+            return [
+                'message' => 'User not found',
+                'error' => 'usernotfound',
+                'code' => Http::STATUS_FORBIDDEN
+            ];
         }
         $authService = AuthenticationService::instance();
         return $authService->buildUserCredentials($user);

@@ -1,4 +1,6 @@
 <?php
+declare(strict_types=1);
+
 use Destiny\Common\Session\Session;
 use Destiny\Common\User\UserRole;
 ?>

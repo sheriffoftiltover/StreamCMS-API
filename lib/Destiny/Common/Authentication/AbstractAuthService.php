@@ -1,4 +1,6 @@
 <?php
+declare(strict_types=1);
+
 namespace Destiny\Common\Authentication;
 
 use Destiny\Common\Config;
@@ -40,10 +42,7 @@ abstract class AbstractAuthService extends Service {
         return Config::$a[$this->provider]['dgg_user'];
     }
 
-    /**
-     * @return array|null
-     */
-    public function getDefaultAuth() {
+    public function getDefaultAuth(): array|null {
         try {
             if ($this->defaultAuth == null) {
                 $this->defaultAuth = UserAuthService::instance()->getByUserIdAndProvider($this->getDefaultUserId(), $this->provider);
@@ -54,10 +53,7 @@ abstract class AbstractAuthService extends Service {
         return $this->defaultAuth;
     }
 
-    /**
-     * @return array|null
-     */
-    public function getDefaultUser() {
+    public function getDefaultUser(): array|null {
         try {
             if ($this->defaultUser == null) {
                 $this->defaultUser = UserService::instance()->getUserById($this->getDefaultUserId());
@@ -68,9 +64,6 @@ abstract class AbstractAuthService extends Service {
         return $this->defaultUser;
     }
 
-    /**
-     * @return string
-     */
     protected function getValidAccessToken(): ?string {
         $auth = $this->getDefaultAuth();
         if (!empty($auth) && !empty($auth['refreshToken'])) {

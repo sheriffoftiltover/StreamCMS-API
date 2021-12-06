@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 use Destiny\Common\Utils\Date;
 use Destiny\Common\Utils\Tpl;

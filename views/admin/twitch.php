@@ -1,4 +1,6 @@
 <?php
+declare(strict_types=1);
+
 use Destiny\Common\Authentication\AuthProvider;
 use Destiny\Common\Config;
 use Destiny\Common\Session\Session;
