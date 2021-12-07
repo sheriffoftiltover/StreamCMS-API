@@ -14,7 +14,8 @@ use Destiny\Common\Config;
 <body id="login">
 <div id="page-wrap">
 
-    <?php $hideSignIn = true; include 'seg/nav.php' ?>
+    <?php $hideSignIn = true;
+    include 'seg/nav.php' ?>
 
     <section class="container vertical-contain">
         <div style="flex: 1;">

@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<skipper version="3.2.35.1768" mvc="Without MVC" orm="Doctrine2" name="StreamCMS" uuid="be3ad206-f8c5-4f6b-b935-dac72f7c8eb7">
+  <module name="\User" local-name="User" namespace="\StreamCMS\User" local-namespace="\StreamCMS\User" export-format="Doctrine2Xml" export-path="." uuid="45c16ebe-d4d0-4df7-bff5-553caf3f319b">
+    <entity name="\StreamCMS\User\SampleEntity" local-name="SampleEntity" namespace="\StreamCMS\User" uuid="f46a5fab-59ef-433e-b5d7-b00786dd3dd8">
+      <field name="id" type="integer" required="true" unique="true" primary="true" auto-increment="true" uuid="39552282-6dfa-457c-a754-5df13c9ddace"/>
+      <field name="name" type="string" size="255" uuid="e214e29a-d27a-4d92-b1d2-2a0613bbcda0"/>
+    </entity>
+  </module>
+  <visual-data>
+    <entity uuid="f46a5fab-59ef-433e-b5d7-b00786dd3dd8" bg-color="#FFFFFF" hdr-color="#D2D2D2" position-x="10" position-y="20"/>
+    <module uuid="45c16ebe-d4d0-4df7-bff5-553caf3f319b" bg-color="#FEFCE8" position-x="61" position-y="72" size-x="11" size-x2="220" size-y="22" size-y2="163"/>
+    <project uuid="be3ad206-f8c5-4f6b-b935-dac72f7c8eb7" size-x="0" size-x2="331" size-y="0" size-y2="285"/>
+  </visual-data>
+</skipper>

@@ -1,5 +1,5 @@
 @import "common";
-@import "./bootstrap";
+@import "assets/web/css/bootstrap";
 @import "~roboto-fontface/css/roboto/roboto-fontface.css";
 @import "~@fortawesome/fontawesome-free/css/fontawesome.css";
 @import "~@fortawesome/fontawesome-free/css/brands.css";
@@ -210,7 +210,7 @@ form.form-alt {
   a {
     margin: 0;
     padding: 0;
-    background: url("../img/dgg-logo.svg") no-repeat center center;
+    background: url("assets/web/img/dgg-logo.svg") no-repeat center center;
     background-size: contain;
     height: 77px;
     width: 250px;
@@ -243,7 +243,7 @@ form.form-alt {
   }
   .brand {
     text-indent: -999em;
-    background: url("../img/dgg-logo.svg") no-repeat center left;
+    background: url("assets/web/img/dgg-logo.svg") no-repeat center left;
     background-size: contain;
     margin: 0.5em 0.5em 0.5em 0;
     width: 105px;
@@ -1227,15 +1227,15 @@ h3[data-toggle="collapse"] {
 
 img.img_320x240 {
   width: 100%;
-  content: url("../img/320x240.gif");
+  content: url("assets/web/img/320x240.gif");
 }
 img.img_64x64 {
   width: 100%;
-  content: url("../img/64x64.gif");
+  content: url("assets/web/img/64x64.gif");
 }
 
 .amazon-logo {
-  background: url("../img/amazon.png");
+  background: url("assets/web/img/amazon.png");
   background-size: contain;
   text-indent: -999em;
   display: inline-block;
@@ -1244,7 +1244,7 @@ img.img_64x64 {
 }
 
 .streamlabs-logo {
-  background: url("../img/sl-logo.png");
+  background: url("assets/web/img/sl-logo.png");
   background-size: contain;
   text-indent: -999em;
   display: inline-block;
@@ -1680,65 +1680,65 @@ body#bigscreen {
 }
 
 img.podcast-icon {
-  content: url("../img/podcast80.png");
+  content: url("assets/web/img/podcast80.png");
 }
 
 img.dbh-hood1 {
-  content: url("../img/dbh-hood1.png");
+  content: url("assets/web/img/dbh-hood1.png");
 }
 img.dbh-mug2 {
-  content: url("../img/dbh-mug2.png");
+  content: url("assets/web/img/dbh-mug2.png");
 }
 img.dbh-mug3 {
-  content: url("../img/dbh-mug3.png");
+  content: url("assets/web/img/dbh-mug3.png");
 }
 img.dbh-shirt1 {
-  content: url("../img/dbh-shirt1.png");
+  content: url("assets/web/img/dbh-shirt1.png");
 }
 img.dbh-shirt2 {
-  content: url("../img/dbh-shirt2.png");
+  content: url("assets/web/img/dbh-shirt2.png");
 }
 img.dbh-shirt3 {
-  content: url("../img/dbh-shirt3.png");
+  content: url("assets/web/img/dbh-shirt3.png");
 }
 img.dbh-sticker1 {
-  content: url("../img/dbh-sticker1.png");
+  content: url("assets/web/img/dbh-sticker1.png");
 }
 img.dbh-duckerz {
-  content: url("../img/dbh-duckerz.png");
+  content: url("assets/web/img/dbh-duckerz.png");
 }
 img.dbh-cocoa {
-  content: url("../img/dbh-cocoa.png");
+  content: url("assets/web/img/dbh-cocoa.png");
 }
 img.merch-duckerz-shirt {
-  content: url("../img/merch-duckerz-shirt.png");
+  content: url("assets/web/img/merch-duckerz-shirt.png");
 }
 img.merch-weebidesti-shirt {
-  content: url("../img/merch-weebidesti-shirt.png");
+  content: url("assets/web/img/merch-weebidesti-shirt.png");
 }
 img.merch-the-original-memer-shirt {
-  content: url("../img/merch-the-original-memer-shirt.png");
+  content: url("assets/web/img/merch-the-original-memer-shirt.png");
 }
 img.merch-destinygg-hoodie {
-  content: url("../img/merch-destinygg-hoodie.png");
+  content: url("assets/web/img/merch-destinygg-hoodie.png");
 }
 img.merch-cinnabonnelli-shirt {
-  content: url("../img/merch-cinnabonnelli-shirt.png");
+  content: url("assets/web/img/merch-cinnabonnelli-shirt.png");
 }
 img.merch-leruse-shirt {
-  content: url("../img/merch-leruse-shirt.png");
+  content: url("assets/web/img/merch-leruse-shirt.png");
 }
 img.tier-1-flair {
-  content: url("../img/flair13.png");
+  content: url("assets/web/img/flair13.png");
 }
 img.tier-2-flair {
-  content: url("../img/flair1.png");
+  content: url("assets/web/img/flair1.png");
 }
 img.tier-3-flair {
-  content: url("../img/flair3.png");
+  content: url("assets/web/img/flair3.png");
 }
 img.tier-4-flair {
-  content: url("../img/flair8.png");
+  content: url("assets/web/img/flair8.png");
 }
 
 #podcasts {
@@ -2039,7 +2039,7 @@ form#nameForm {
 }
 
 .bad-image-placeholder {
-  background-image: url("../img/image-bad.svg");
+  background-image: url("assets/web/img/image-bad.svg");
 }
 
 #bans-table {

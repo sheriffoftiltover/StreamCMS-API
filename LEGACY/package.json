@@ -28,10 +28,10 @@
   "license": "SEE LICENSE IN <LICENSE.md>",
   "bugs": "https://github.com/destinygg/website/issues",
   "directories": {
-    "lib": "./lib",
-    "assets": "./assets",
-    "scripts": "./scripts",
-    "public": "./public",
+    "lib": "lib",
+    "assets": "assets",
+    "scripts": "scripts",
+    "public": "public",
     "static": "./static"
   },
   "dependencies": {

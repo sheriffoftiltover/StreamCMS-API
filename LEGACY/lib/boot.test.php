@@ -11,7 +11,7 @@ use Monolog\Logger;
 use Monolog\Processor\PsrLogMessageProcessor;
 
 define('_APP_VERSION', '2.32.2'); // auto-generated: 1635004717420
-define('_BASEDIR', realpath(__DIR__ . '/../'));
+define('_BASEDIR', realpath(__DIR__ . '/website-master/'));
 
 $loader = require _BASEDIR . '/vendor/autoload.php';
 Config::load(array_replace_recursive(

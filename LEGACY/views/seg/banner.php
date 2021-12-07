@@ -15,7 +15,7 @@ $hostedChannel = $cache->fetch(TwitchApiService::CACHE_KEY_HOSTED_CHANNEL);
     <div class="container">
 
         <header id="brand">
-            <h1><a href="/"><?=Config::$a['meta']['title']?></a></h1>
+            <h1><a href="/"><?= Config::$a['meta']['title']?></a></h1>
         </header>
 
         <div id="discord-status">
