@@ -6,8 +6,8 @@
         <remote-mappings server-id="php@3ac1504b-b6cf-4ff4-ad63-da94d46787d1">
           <settings>
             <list>
-              <mapping local-root="$PROJECT_DIR$/public" remote-root="/var/www/html/destiny" />
-              <mapping local-root="$PROJECT_DIR$" remote-root="/var/www/destiny" />
+              <mapping local-root="$PROJECT_DIR$" remote-root="/var/www" />
+              <mapping local-root="$PROJECT_DIR$/StreamCMS/Web" remote-root="/var/www/html" />
             </list>
           </settings>
         </remote-mappings>

@@ -1,18 +1,21 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
-  <component name="PublishConfigData" serverName="HW_Dedi" remoteFilesAllowedToDisappearOnAutoupload="false">
+  <component name="PublishConfigData" autoUpload="Always" serverName="HW_Dedi" remoteFilesAllowedToDisappearOnAutoupload="false">
     <serverData>
       <paths name="HW_Dedi">
         <serverdata>
           <mappings>
-            <mapping deploy="/var/www/html" local="$PROJECT_DIR$/public" web="/" />
+            <mapping deploy="/var/www/html" local="$PROJECT_DIR$/StreamCMS/Web/API" web="/" />
             <mapping deploy="/var/www" local="$PROJECT_DIR$" />
           </mappings>
           <excludedPaths>
-            <excludedPath local="true" path="$PROJECT_DIR$/vendor" />
+            <excludedPath local="true" path="$PROJECT_DIR$/StreamCMS/vendor" />
+            <excludedPath local="true" path="$PROJECT_DIR$/LEGACY" />
+            <excludedPath local="true" path="$PROJECT_DIR$/.gitignore" />
           </excludedPaths>
         </serverdata>
       </paths>
     </serverData>
+    <option name="myAutoUpload" value="ALWAYS" />
   </component>
 </project>

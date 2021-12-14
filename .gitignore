@@ -1,2 +1,3 @@
 /StreamCMS/vendor/
 /LEGACY/vendor/
+.env

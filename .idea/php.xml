@@ -127,6 +127,7 @@
       <path value="$PROJECT_DIR$/StreamCMS/vendor/theseer/tokenizer" />
       <path value="$PROJECT_DIR$/StreamCMS/vendor/symfony/var-exporter" />
       <path value="$PROJECT_DIR$/StreamCMS/vendor/beberlei/doctrineextensions" />
+      <path value="$PROJECT_DIR$/StreamCMS/vendor/symfony/dotenv" />
     </include_path>
   </component>
   <component name="PhpInterpreters">
