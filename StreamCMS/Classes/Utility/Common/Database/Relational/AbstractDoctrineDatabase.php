@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace StreamCMS\Utility\Database\Relational;
+namespace StreamCMS\Utility\Common\Database\Relational;
 
 use Doctrine\Common\Cache\ArrayCache;
 use Doctrine\Common\Cache\ChainCache;
@@ -11,7 +11,7 @@ use Doctrine\DBAL\Driver\Connection;
 use Doctrine\ORM\Configuration;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\Mapping\UnderscoreNamingStrategy;
-use StreamCMS\Utility\Database\Relational\Config\AbstractDoctrineDBConfig;
+use StreamCMS\Utility\Common\Database\Relational\Config\AbstractDoctrineDBConfig;
 
 abstract class AbstractDoctrineDatabase extends AbstractDatabase
 {

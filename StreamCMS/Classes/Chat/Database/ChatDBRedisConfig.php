@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace StreamCMS\Database\ChatDB;
+namespace StreamCMS\Chat\Database;
 
-use StreamCMS\Utility\Database\KeyValue\Config\AbstractRedisConfig;
+use StreamCMS\Utility\Common\Database\KeyValue\Config\AbstractRedisConfig;
 
 final class ChatDBRedisConfig extends AbstractRedisConfig
 {

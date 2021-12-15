@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace StreamCMS\Database\ChatDB;
+namespace StreamCMS\Chat\Database;
 
-use StreamCMS\Utility\Database\Relational\AbstractDoctrineDatabase;
-use StreamCMS\Utility\Database\Relational\Config\AbstractDoctrineDBConfig;
+use StreamCMS\Utility\Common\Database\Relational\AbstractDoctrineDatabase;
+use StreamCMS\Utility\Common\Database\Relational\Config\AbstractDoctrineDBConfig;
 
 final class ChatDB extends AbstractDoctrineDatabase
 {

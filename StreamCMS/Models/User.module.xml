@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<skipper version="3.2.35.1768" mvc="Without MVC" orm="Doctrine2">
+  <module name="\User" local-name="User" namespace="\StreamCMS\User\Models" local-namespace="\StreamCMS\User\Models" export-format="Doctrine2Php" export-path="../Classes/User/Models" uuid="45c16ebe-d4d0-4df7-bff5-553caf3f319b">
+    <entity name="\StreamCMS\User\Models\Account" local-name="Account" namespace="\StreamCMS\User\Models" uuid="f46a5fab-59ef-433e-b5d7-b00786dd3dd8">
+      <field name="id" type="integer" required="true" unique="true" primary="true" auto-increment="true" uuid="39552282-6dfa-457c-a754-5df13c9ddace"/>
+      <field name="name" type="string" size="191" required="true" uuid="e214e29a-d27a-4d92-b1d2-2a0613bbcda0"/>
+    </entity>
+    <orm-attributes>
+      <attribute name="file-suffix">without-suffix</attribute>
+      <attribute name="filename-format">entity-name-only</attribute>
+      <attribute name="db-naming-strategy">underscore-lower</attribute>
+    </orm-attributes>
+  </module>
+  <visual-data>
+    <entity uuid="f46a5fab-59ef-433e-b5d7-b00786dd3dd8" bg-color="#FFFFFF" hdr-color="#D2D2D2" position-x="14" position-y="37" size-x="0" size-x2="101" size-y="0" size-y2="45"/>
+    <module uuid="45c16ebe-d4d0-4df7-bff5-553caf3f319b" bg-color="#FEFCE8" size-x="11" size-x2="289" size-y="-13" size-y2="213"/>
+  </visual-data>
+</skipper>

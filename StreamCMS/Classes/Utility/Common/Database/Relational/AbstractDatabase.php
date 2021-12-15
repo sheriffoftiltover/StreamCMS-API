@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace StreamCMS\Utility\Database\Relational;
+namespace StreamCMS\Utility\Common\Database\Relational;
 
-use StreamCMS\Utility\Database\Relational\Config\AbstractDBConfig;
+use StreamCMS\Utility\Common\Database\Relational\Config\AbstractDBConfig;
 
 abstract class AbstractDatabase
 {

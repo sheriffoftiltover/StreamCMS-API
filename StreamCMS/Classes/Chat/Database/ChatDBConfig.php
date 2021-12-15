@@ -2,32 +2,32 @@
 
 declare(strict_types=1);
 
-namespace StreamCMS\Database\ChatDB;
+namespace StreamCMS\Chat\Database;
 
 use Doctrine\Common\Proxy\AbstractProxyFactory;
 use JetBrains\PhpStorm\Pure;
-use StreamCMS\Utility\Database\Relational\Config\AbstractDoctrineDBConfig;
+use StreamCMS\Utility\Common\Database\Relational\Config\BaseDoctrineDBConfig;
 
-final class ChatDBConfig extends AbstractDoctrineDBConfig
+final class ChatDBConfig extends BaseDoctrineDBConfig
 {
     public function getName(): string
     {
-        return $_ENV['DATABASE_NAME'];
+        return $_ENV['CHAT_DB_NAME'];
     }
 
     public function getUser(): string
     {
-        return $_ENV['DATABASE_USER'];
+        return $_ENV['CHAT_DB_USER'];
     }
 
     public function getPass(): string
     {
-        return $_ENV['DATABASE_PASS'];
+        return $_ENV['CHAT_DB_PASS'];
     }
 
     public function getHost(): string
     {
-        return $_ENV['DATABASE_HOST'];
+        return $_ENV['CHAT_DB_HOST'];
     }
 
     public function getDriver(): string
@@ -42,17 +42,9 @@ final class ChatDBConfig extends AbstractDoctrineDBConfig
 
     public function getModelPaths(): array
     {
-        return [__DIR__ . '/../Models'];
-    }
-
-    public function getProxyDirectory(): string
-    {
-        return __DIR__ . '/../Models/Proxies';
-    }
-
-    public function getProxyNamespace(): string
-    {
-        return 'TwitchBot\\Database\\Models\\Proxies';
+        return [
+            STREAM_CMS_DIR . '/Classes/Chat/Models',
+        ];
     }
 
     public function getAutogenerateProxyConfiguration(): int

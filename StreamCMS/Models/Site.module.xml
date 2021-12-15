@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<skipper version="3.2.35.1768" mvc="Without MVC" orm="Doctrine2">
+  <module name="\Site" local-name="Site" namespace="\StreamCMS\Site\Models" local-namespace="\StreamCMS\Site\Models" export-format="Doctrine2Php" export-path="../Classes/Site/Models" uuid="927196a9-9f01-41ae-ac28-faf4faa4b148">
+    <entity name="\StreamCMS\Site\Models\Site" local-name="Site" namespace="\StreamCMS\Site\Models" uuid="bb691cd6-5889-44b6-9c91-7c5a0aa3260f">
+      <field name="id" type="integer" required="true" unique="true" primary="true" auto-increment="true" uuid="e616d7e5-dc6f-4533-8db3-b34c4ff0ccf9"/>
+      <field name="host" type="string" size="191" required="true" uuid="1460a78f-380e-44c0-824d-06f6a3691399"/>
+      <field name="accountId" type="integer" required="true" uuid="3aeb573d-ff2c-488f-97f4-3229129e659d"/>
+    </entity>
+    <association from="\StreamCMS\Site\Models\Site" to="\StreamCMS\User\Models\Account" caption="Account Sites" owner-alias="sites" inverse-alias="owner" many-owner="true" many-inverse="false" parent-required="true" uuid="d14033de-063f-448f-9e10-22876f53a0aa">
+      <association-field from="accountId" to="id" uuid="aa9d289d-e1ce-4a3f-a7c5-ca70c1ed9fc5"/>
+    </association>
+    <orm-attributes>
+      <attribute name="file-suffix">without-suffix</attribute>
+      <attribute name="filename-format">entity-name-only</attribute>
+      <attribute name="db-naming-strategy">underscore-lower</attribute>
+    </orm-attributes>
+  </module>
+  <visual-data>
+    <entity uuid="bb691cd6-5889-44b6-9c91-7c5a0aa3260f" bg-color="#FFFFFF" hdr-color="#D2D2D2" position-x="14" position-y="38" size-x="0" size-x2="96" size-y="0" size-y2="45"/>
+    <module uuid="927196a9-9f01-41ae-ac28-faf4faa4b148" bg-color="#FF8787" size-x="11" size-x2="864" size-y="-13" size-y2="241"/>
+  </visual-data>
+</skipper>

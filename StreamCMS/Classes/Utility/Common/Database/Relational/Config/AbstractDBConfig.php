@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace StreamCMS\Utility\Database\Relational\Config;
+namespace StreamCMS\Utility\Common\Database\Relational\Config;
 
 use JetBrains\PhpStorm\ArrayShape;
 use PDO;

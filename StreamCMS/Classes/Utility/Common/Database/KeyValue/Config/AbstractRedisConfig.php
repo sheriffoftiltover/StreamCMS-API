@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace StreamCMS\Utility\Database\KeyValue\Config;
+namespace StreamCMS\Utility\Common\Database\KeyValue\Config;
 
 abstract class AbstractRedisConfig
 {
