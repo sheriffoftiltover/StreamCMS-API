@@ -12,6 +12,8 @@ use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
+use StreamCMS\Utility\Common\API\StreamCMSRequest;
+use StreamCMS\Utility\Common\Exceptions\API\InvalidRequestInstance;
 
 final class APIStrategy implements StrategyInterface
 {
@@ -19,8 +21,12 @@ final class APIStrategy implements StrategyInterface
     {
     }
 
-    public function invokeRouteCallable(Route $route, ServerRequestInterface $request): ResponseInterface
+    public function invokeRouteCallable(Route $route, StreamCMSRequest|ServerRequestInterface $request): ResponseInterface
     {
+        // FIXME @sheriffoftiltover We probably shouldn't be throwing exceptions directly in our strategy, but I'll fix it later..
+        if (!$request instanceof StreamCMSRequest) {
+            throw new InvalidRequestInstance('Must pass StreamCMSRequest into API Strategy.');
+        }
         $controller = $route->getCallable();
 
         return $controller($request, $route->getVars(), $route->getPath());

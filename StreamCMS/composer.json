@@ -25,13 +25,13 @@
         "ramsey/uuid": "~4.1",
         "league/route": "~4.5",
         "laminas/laminas-diactoros": "~2.6",
-        "laminas/laminas-httphandlerrunner": "~1.4"
+        "laminas/laminas-httphandlerrunner": "~1.4",
+        "robmorgan/phinx": "~0.11"
     },
     "require-dev": {
         "fakerphp/faker": "~1.14",
         "phpunit/phpunit": "~9.5",
-        "symfony/framework-bundle": "~4.4",
-        "robmorgan/phinx": "~0.11"
+        "symfony/framework-bundle": "~4.4"
     },
     "autoload": {
         "psr-4": {
