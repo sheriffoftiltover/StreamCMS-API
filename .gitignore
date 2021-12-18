@@ -1,3 +1,4 @@
 /StreamCMS/vendor/
+/StreamCMS/Scripts/Deployment/StreamCMSCLI/node_modules
 /LEGACY/vendor/
 .env

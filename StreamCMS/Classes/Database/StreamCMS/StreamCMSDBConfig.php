@@ -2,32 +2,32 @@
 
 declare(strict_types=1);
 
-namespace StreamCMS\Chat\Database;
+namespace StreamCMS\Database\StreamCMS;
 
 use Doctrine\Common\Proxy\AbstractProxyFactory;
 use JetBrains\PhpStorm\Pure;
 use StreamCMS\Utility\Common\Database\Relational\Config\BaseDoctrineDBConfig;
 
-final class ChatDBConfig extends BaseDoctrineDBConfig
+final class StreamCMSDBConfig extends BaseDoctrineDBConfig
 {
     public function getName(): string
     {
-        return $_ENV['CHAT_DB_NAME'];
+        return $_ENV['STREAM_CMS_DB_NAME'];
     }
 
     public function getUser(): string
     {
-        return $_ENV['CHAT_DB_USER'];
+        return $_ENV['STREAM_CMS_DB_USER'];
     }
 
     public function getPass(): string
     {
-        return $_ENV['CHAT_DB_PASS'];
+        return $_ENV['STREAM_CMS_DB_PASS'];
     }
 
     public function getHost(): string
     {
-        return $_ENV['CHAT_DB_HOST'];
+        return $_ENV['STREAM_CMS_DB_HOST'];
     }
 
     public function getDriver(): string
@@ -54,8 +54,8 @@ final class ChatDBConfig extends BaseDoctrineDBConfig
     }
 
     #[Pure]
-    public function getRedisConfig(): ChatDBRedisConfig
+    public function getRedisConfig(): StreamCMSDBRedisConfig
     {
-        return new ChatDBRedisConfig();
+        return new StreamCMSDBRedisConfig();
     }
 }

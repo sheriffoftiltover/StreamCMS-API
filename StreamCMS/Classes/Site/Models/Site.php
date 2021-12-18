@@ -5,15 +5,13 @@ declare(strict_types=1);
 namespace StreamCMS\Site\Models;
 
 use Doctrine\ORM\Mapping as ORM;
-use StreamCMS\Chat\Database\ChatDB;
+use StreamCMS\Database\StreamCMS\StreamCMSModel;
 use StreamCMS\User\Models\Account;
-use StreamCMS\Utility\Common\Database\Relational\AbstractDoctrineDatabase;
-use StreamCMS\Utility\Common\Models\AbstractDoctrineModel;
 
 /**
  * @ORM\Entity
  */
-class Site extends AbstractDoctrineModel
+class Site extends StreamCMSModel
 {
     /**
      * @ORM\Id
@@ -37,9 +35,4 @@ class Site extends AbstractDoctrineModel
      * @ORM\JoinColumn(name="account_id", referencedColumnName="id", nullable=false)
      */
     private Account $owner;
-
-    public static function getDatabase(): AbstractDoctrineDatabase
-    {
-        return ChatDB::get();
-    }
 }

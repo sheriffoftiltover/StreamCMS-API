@@ -2,24 +2,24 @@
 
 declare(strict_types=1);
 
-namespace StreamCMS\Chat\Database;
+namespace StreamCMS\Database\StreamCMS;
 
 use StreamCMS\Utility\Common\Database\KeyValue\Config\AbstractRedisConfig;
 
-final class ChatDBRedisConfig extends AbstractRedisConfig
+final class StreamCMSDBRedisConfig extends AbstractRedisConfig
 {
     public function getHost(): string
     {
-        return $_ENV['CHAT_DB_REDIS_HOST'];
+        return $_ENV['STREAM_CMS_REDIS_HOST'];
     }
 
     public function getDatabase(): int
     {
-        return $_ENV['CHAT_DB_REDIS_DATABASE'];
+        return (int) $_ENV['STREAM_CMS_REDIS_DATABASE'];
     }
 
     public function getPort(): int
     {
-        return $_ENV['CHAT_DB_REDIS_PORT'];
+        return (int) $_ENV['STREAM_CMS_REDIS_PORT'];
     }
 }

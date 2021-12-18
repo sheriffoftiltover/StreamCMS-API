@@ -5,14 +5,12 @@ declare(strict_types=1);
 namespace StreamCMS\User\Models;
 
 use Doctrine\ORM\Mapping as ORM;
-use StreamCMS\Chat\Database\ChatDB;
-use StreamCMS\Utility\Common\Database\Relational\AbstractDoctrineDatabase;
-use StreamCMS\Utility\Common\Models\AbstractDoctrineModel;
+use StreamCMS\Database\StreamCMS\StreamCMSModel;
 
 /**
  * @ORM\Entity
  */
-class Account extends AbstractDoctrineModel
+class Account extends StreamCMSModel
 {
     /**
      * @ORM\Id
@@ -40,9 +38,4 @@ class Account extends AbstractDoctrineModel
      * @ORM\OneToMany(targetEntity="StreamCMS\Site\Models\Site", mappedBy="owner")
      */
     private $sites;
-
-    public static function getDatabase(): AbstractDoctrineDatabase
-    {
-        return ChatDB::get();
-    }
 }

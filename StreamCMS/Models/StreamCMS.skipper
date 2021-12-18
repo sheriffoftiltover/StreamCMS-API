@@ -5,6 +5,7 @@
   <external-module storage-path="Site.module.xml"/>
   <visual-data>
     <association uuid="62f2ab48-be30-47e5-9174-47d89bf6484c" caption1-position-x="0" caption1-position-y="0" center-position-x="0" center-position-y="-4" color="#969696"/>
+    <association uuid="9e8a7698-d8b6-4a55-8b55-ea9fc52e394e" color="#969696"/>
     <association uuid="cf83336a-6f69-4d00-b1bb-98568873d6d1" color="#FFBF87"/>
     <association uuid="d14033de-063f-448f-9e10-22876f53a0aa" color="#969696"/>
     <association uuid="e80b91e0-aaad-4021-990b-9071cc0e8c1a" color="#FFF187"/>

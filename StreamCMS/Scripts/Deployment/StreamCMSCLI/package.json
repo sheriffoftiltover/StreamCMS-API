@@ -1,0 +1,15 @@
+{
+  "name": "stream_cms_cli",
+  "version": "1.0.0",
+  "dependencies": {
+    "commander": "*"
+  },
+  "devDependencies": {
+    "ts-node": "*"
+  },
+  "scripts": {
+    "build": "tsc --build --verbose src & npm run create-command",
+    "create-command": "echo '#!/bin/bash\nnode /home/StreamCMS/build/main.js $@' > /usr/local/bin/StreamCMS & chmod +x /usr/local/bin/StreamCMS & bash"
+  },
+  "main": "main.js"
+}
