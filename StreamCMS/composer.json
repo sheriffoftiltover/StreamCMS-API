@@ -42,7 +42,7 @@
     },
     "scripts": {
         "build": [
-            "cd /home/StreamCMS & npm run build"
+            "npm --prefix /home/StreamCMS run build"
         ]
     },
     "extra": {

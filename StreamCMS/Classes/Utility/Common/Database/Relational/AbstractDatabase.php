@@ -16,5 +16,10 @@ abstract class AbstractDatabase
         return static::$instance;
     }
 
+    public static function reset(): void
+    {
+        static::$instance = null;
+    }
+
     abstract public function getConfig(): AbstractDBConfig;
 }

@@ -5,8 +5,11 @@ declare(strict_types=1);
 namespace StreamCMS\Database\StreamCMS;
 
 use Doctrine\Common\Proxy\AbstractProxyFactory;
+use JetBrains\PhpStorm\ArrayShape;
 use JetBrains\PhpStorm\Pure;
+use PDO;
 use StreamCMS\Utility\Common\Database\Relational\Config\BaseDoctrineDBConfig;
+use StreamCMS\Utility\Files\FileSystem;
 
 final class StreamCMSDBConfig extends BaseDoctrineDBConfig
 {
@@ -42,9 +45,7 @@ final class StreamCMSDBConfig extends BaseDoctrineDBConfig
 
     public function getModelPaths(): array
     {
-        return [
-            STREAM_CMS_DIR . '/Classes/Chat/Models',
-        ];
+        return FileSystem::getModelFolders();
     }
 
     public function getAutogenerateProxyConfiguration(): int

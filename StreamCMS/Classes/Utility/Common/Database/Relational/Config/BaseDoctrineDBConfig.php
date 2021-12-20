@@ -15,4 +15,9 @@ abstract class BaseDoctrineDBConfig extends AbstractDoctrineDBConfig
     {
         return 'StreamCMS\\Utility\\Common\\Models\\Proxies';
     }
+
+    public function getEventSubscribers(): array
+    {
+        return [];
+    }
 }

@@ -21,14 +21,10 @@ class Build extends BaseCommand
         return "build part of the StreamCMS application.";
     }
 
-    public getNameArgs(): string {
-        return "build <part>";
-    }
-
     private static buildDatabase(): void
     {
         // Clear the dir for our entities
-        exec('')
+        exec('php /var/www/StreamCMS/Scripts/Deployment/Database/DatabaseBuilder.php');
     }
 }
 

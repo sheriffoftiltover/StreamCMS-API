@@ -50,12 +50,6 @@ export class StreamCMS
             .action((...args) => {
                 this.run(...[command.getName(), ...args]);
             });
-        // this.program.addCommand(run);
-        // const build = this.program.command(command.getNameArgs());
-        // build
-        //     .description(command.getDescription())
-        //     .action(this.run);
-        // program.addCommand(build);
     }
 
     private getCommand(commandName: string): BaseCommand

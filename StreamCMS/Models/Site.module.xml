@@ -4,10 +4,10 @@
     <entity name="\StreamCMS\Site\Models\Site" local-name="Site" namespace="\StreamCMS\Site\Models" uuid="bb691cd6-5889-44b6-9c91-7c5a0aa3260f">
       <field name="id" type="integer" required="true" unique="true" primary="true" auto-increment="true" uuid="e616d7e5-dc6f-4533-8db3-b34c4ff0ccf9"/>
       <field name="host" type="string" size="191" required="true" uuid="1460a78f-380e-44c0-824d-06f6a3691399"/>
-      <field name="accountId" type="integer" required="true" uuid="3aeb573d-ff2c-488f-97f4-3229129e659d"/>
+      <field name="ownerId" type="integer" required="true" uuid="3aeb573d-ff2c-488f-97f4-3229129e659d"/>
     </entity>
     <association from="\StreamCMS\Site\Models\Site" to="\StreamCMS\User\Models\Account" caption="Account Sites" owner-alias="sites" inverse-alias="owner" many-owner="true" many-inverse="false" parent-required="true" uuid="d14033de-063f-448f-9e10-22876f53a0aa">
-      <association-field from="accountId" to="id" uuid="aa9d289d-e1ce-4a3f-a7c5-ca70c1ed9fc5"/>
+      <association-field from="ownerId" to="id" uuid="aa9d289d-e1ce-4a3f-a7c5-ca70c1ed9fc5"/>
     </association>
     <orm-attributes>
       <attribute name="file-suffix">without-suffix</attribute>

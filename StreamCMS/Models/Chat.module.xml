@@ -5,21 +5,21 @@
       <field name="id" type="integer" required="true" unique="true" primary="true" auto-increment="true" uuid="40306fe9-1d49-4210-805b-d2fe53cddaf2"/>
       <field name="message" type="text" required="true" uuid="776683b5-3574-4ab2-9c1a-6d11eacc88b9"/>
       <field name="read" type="boolean" default="0" required="true" uuid="d7b9b8a2-6285-4ef0-bca9-28104d1e1f74"/>
-      <field name="site_id" type="integer" unique="true" uuid="515ea3c4-2e28-4d5a-8079-9a669103a790"/>
-      <field name="receiver_account_id" type="integer" uuid="a2cb1cb0-6da6-41bc-b2da-579c0c237c06"/>
-      <field name="sender_account_id" type="integer" uuid="2bd33b59-8583-470c-b76f-e3a3784b2ace"/>
+      <field name="siteId" type="integer" unique="true" uuid="515ea3c4-2e28-4d5a-8079-9a669103a790"/>
+      <field name="receiverAccountId" type="integer" uuid="a2cb1cb0-6da6-41bc-b2da-579c0c237c06"/>
+      <field name="senderAccountId" type="integer" uuid="2bd33b59-8583-470c-b76f-e3a3784b2ace"/>
     </entity>
     <association from="\StreamCMS\Chat\Models\PrivateMessage" to="\StreamCMS\Site\Models\Site" caption="Site PrivateMessages" owner-alias="privateMessages" inverse-alias="site" many-owner="false" many-inverse="false" uuid="62f2ab48-be30-47e5-9174-47d89bf6484c">
-      <association-field from="site_id" to="id" uuid="503d23b2-04b6-45f7-aa5b-d17d8f428d67"/>
+      <association-field from="siteId" to="id" uuid="503d23b2-04b6-45f7-aa5b-d17d8f428d67"/>
       <orm-attributes>
         <attribute name="on-delete">SET NULL</attribute>
       </orm-attributes>
     </association>
     <association from="\StreamCMS\Chat\Models\PrivateMessage" to="\StreamCMS\User\Models\Account" caption="Received Private Messages" owner-alias="receivedMessages" inverse-alias="receiver" many-owner="true" many-inverse="false" uuid="e80b91e0-aaad-4021-990b-9071cc0e8c1a">
-      <association-field from="receiver_account_id" to="id" uuid="61faf5db-7bb8-499b-be9a-6ba22f010a94"/>
+      <association-field from="receiverAccountId" to="id" uuid="61faf5db-7bb8-499b-be9a-6ba22f010a94"/>
     </association>
     <association from="\StreamCMS\Chat\Models\PrivateMessage" to="\StreamCMS\User\Models\Account" caption="Sent Private Messages" owner-alias="sentMessages" inverse-alias="sender" many-owner="true" many-inverse="false" uuid="cf83336a-6f69-4d00-b1bb-98568873d6d1">
-      <association-field from="sender_account_id" to="id" uuid="9301c73c-57dd-4e30-b9e9-d63c9e904fec"/>
+      <association-field from="senderAccountId" to="id" uuid="9301c73c-57dd-4e30-b9e9-d63c9e904fec"/>
     </association>
     <orm-attributes>
       <attribute name="file-suffix">without-suffix</attribute>

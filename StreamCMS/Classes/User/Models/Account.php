@@ -38,4 +38,9 @@ class Account extends StreamCMSModel
      * @ORM\OneToMany(targetEntity="StreamCMS\Site\Models\Site", mappedBy="owner")
      */
     private $sites;
+
+    public function __construct(string $name)
+    {
+        $this->name = $name;
+    }
 }
