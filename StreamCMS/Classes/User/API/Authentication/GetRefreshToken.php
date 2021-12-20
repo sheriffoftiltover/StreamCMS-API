@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace StreamCMS\User\API;
+namespace StreamCMS\User\API\Authentication;
 
 class GetRefreshToken
 {

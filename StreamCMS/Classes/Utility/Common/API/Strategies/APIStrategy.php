@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace StreamCMS\Utility\Common\API\Strategies;
 
+use JetBrains\PhpStorm\Pure;
 use League\Route\Http\Exception\MethodNotAllowedException;
 use League\Route\Http\Exception\NotFoundException;
 use League\Route\Route;
@@ -12,6 +13,8 @@ use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
+use StreamCMS\Utility\Common\API\Middleware\ResponseMiddleware\JsonResponseMiddleware;
+use StreamCMS\Utility\Common\API\Middleware\ResponseMiddleware\ThrowableMiddleware;
 use StreamCMS\Utility\Common\API\StreamCMSRequest;
 use StreamCMS\Utility\Common\Exceptions\API\InvalidRequestInstance;
 
@@ -33,25 +36,28 @@ final class APIStrategy implements StrategyInterface
     }
 
     // 404
+    #[Pure]
     public function getNotFoundDecorator(NotFoundException $exception): MiddlewareInterface
     {
-        // TODO: Implement getNotFoundDecorator() method.
+        return new JsonResponseMiddleware($this->responseFactory, $exception);
     }
 
     // 405
+    #[Pure]
     public function getMethodNotAllowedDecorator(MethodNotAllowedException $exception): MiddlewareInterface
     {
-        // TODO: Implement getMethodNotAllowedDecorator() method.
+        return new JsonResponseMiddleware($this->responseFactory, $exception);
     }
 
+    #[Pure]
     public function getExceptionHandler(): MiddlewareInterface
     {
-        // TODO: Implement getExceptionHandler() method.
+        return new ThrowableMiddleware($this->responseFactory);
     }
 
-
+    #[Pure]
     public function getThrowableHandler(): MiddlewareInterface
     {
-        // TODO: Implement getThrowableHandler() method.
+        return new ThrowableMiddleware($this->responseFactory);
     }
 }

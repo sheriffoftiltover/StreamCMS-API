@@ -2,12 +2,11 @@
 
 declare(strict_types=1);
 
-namespace StreamCMS\Utility\Common\API\Middleware;
+namespace StreamCMS\Utility\Common\API\Middleware\ContextMiddleware;
 
 use Laminas\Diactoros\Response;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
-use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 use StreamCMS\Utility\Common\API\Abstractions\Middleware\StreamCMSHeaderMiddleware;
 use StreamCMS\Utility\Common\API\RequestContexts\SiteContext;

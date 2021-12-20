@@ -11,7 +11,7 @@ abstract class StreamCMSHeaderMiddleware implements MiddlewareInterface
 {
     abstract public function getHeaderName(): string;
 
-    protected function getHeader(StreamCMSRequest $request): array|null
+    protected function getHeader(StreamCMSRequest $request): string|null
     {
         return $request->getHeader($this->getHeaderName())[0] ?? null;
     }

@@ -288,6 +288,7 @@
       <option name="EXTENSIONS" value="php" />
     </inspection_tool>
     <inspection_tool class="PhpClassNamingConventionInspection" enabled="true" level="WARNING" enabled_by_default="true">
+      <option name="m_minLength" value="3" />
       <option name="m_maxLength" value="36" />
     </inspection_tool>
     <inspection_tool class="PhpCompoundNamespaceDepthInspection" enabled="true" level="WARNING" enabled_by_default="true" />
@@ -300,6 +301,7 @@
       <option name="m_maxLength" value="36" />
     </inspection_tool>
     <inspection_tool class="PhpIfCanBeMergedWithSequentialConditionInspection" enabled="true" level="WARNING" enabled_by_default="true" />
+    <inspection_tool class="PhpIncludeInspection" enabled="false" level="WEAK WARNING" enabled_by_default="false" />
     <inspection_tool class="PhpIncompatibleReturnTypeInspection" enabled="true" level="WARNING" enabled_by_default="true">
       <option name="STRICT_TYPE_CHECKING" value="true" />
     </inspection_tool>

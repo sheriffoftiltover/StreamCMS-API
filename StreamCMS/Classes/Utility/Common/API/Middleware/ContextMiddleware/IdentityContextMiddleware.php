@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace StreamCMS\Utility\Common\API\Middleware;
+namespace StreamCMS\Utility\Common\API\Middleware\ContextMiddleware;
 
 use Laminas\Diactoros\Response;
 use Psr\Http\Message\ResponseInterface;
