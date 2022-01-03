@@ -4,8 +4,15 @@ declare(strict_types=1);
 
 namespace StreamCMS\User\API\Authentication;
 
-class GetRefreshToken
+use StreamCMS\Utility\Common\API\Abstractions\BaseAPIEndpoint;
+
+class GetRefreshToken extends BaseAPIEndpoint
 {
+    public function parse(): void
+    {
+        // TODO: Implement parse() method.
+    }
+
     public function run()
     {
         // Check if token for particular user exists in redis

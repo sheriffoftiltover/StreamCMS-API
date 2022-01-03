@@ -31,7 +31,6 @@ final class APIStrategy implements StrategyInterface
             throw new InvalidRequestInstance('Must pass StreamCMSRequest into API Strategy.');
         }
         $controller = $route->getCallable();
-
         return $controller($request, $route->getVars(), $route->getPath());
     }
 

@@ -1,5 +1,4 @@
 import {BaseCommand} from "../BaseCommand";
-const { exec } = require("child_process");
 
 class Composer extends BaseCommand
 {
@@ -11,7 +10,7 @@ class Composer extends BaseCommand
     public run(...args): void
     {
         let commandArgs = [...args];
-        exec(
+        this.exec(
             `composer ${commandArgs.join(' ')}`,
             {
                 cwd: "/var/www/StreamCMS"

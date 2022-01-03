@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace StreamCMS\Site\Models;
 
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use StreamCMS\Database\StreamCMS\StreamCMSModel;
 use StreamCMS\User\Models\Account;
@@ -50,5 +52,39 @@ class Site extends StreamCMSModel
     {
         $this->host = $host;
         $this->owner = $owner;
+
+        $this->roleSitePermissions = new ArrayCollection();
+        $this->privateMessages = new ArrayCollection();
+        $this->roles = new ArrayCollection();
+    }
+
+    public function getId(): ?int
+    {
+        return $this->id;
+    }
+
+    public function getHost(): string
+    {
+        return $this->host;
+    }
+
+    public function getRoleSitePermissions(): Collection
+    {
+        return $this->roleSitePermissions;
+    }
+
+    public function getPrivateMessages(): Collection
+    {
+        return $this->privateMessages;
+    }
+
+    public function getRoles(): Collection
+    {
+        return $this->roles;
+    }
+
+    public function getOwner(): Account
+    {
+        return $this->owner;
     }
 }

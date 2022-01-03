@@ -5,9 +5,7 @@ declare(strict_types=1);
 namespace StreamCMS\Database\StreamCMS;
 
 use Doctrine\Common\Proxy\AbstractProxyFactory;
-use JetBrains\PhpStorm\ArrayShape;
 use JetBrains\PhpStorm\Pure;
-use PDO;
 use StreamCMS\Utility\Common\Database\Relational\Config\BaseDoctrineDBConfig;
 use StreamCMS\Utility\Files\FileSystem;
 

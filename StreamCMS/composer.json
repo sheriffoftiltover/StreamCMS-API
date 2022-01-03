@@ -28,12 +28,14 @@
         "laminas/laminas-httphandlerrunner": "~1.4",
         "robmorgan/phinx": "~0.11",
         "nesbot/carbon": "~2.49",
-        "symfony/console": "~4.4"
+        "symfony/console": "~4.4",
+        "adhocore/jwt": "*"
     },
     "require-dev": {
         "fakerphp/faker": "~1.14",
         "phpunit/phpunit": "~9.5",
-        "symfony/framework-bundle": "~4.4"
+        "symfony/framework-bundle": "~4.4",
+        "robmorgan/phinx": "~0.11"
     },
     "autoload": {
         "psr-4": {

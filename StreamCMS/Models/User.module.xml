@@ -4,6 +4,13 @@
     <entity name="\StreamCMS\User\Models\Account" local-name="Account" namespace="\StreamCMS\User\Models" uuid="f46a5fab-59ef-433e-b5d7-b00786dd3dd8">
       <field name="id" type="integer" required="true" unique="true" primary="true" auto-increment="true" uuid="39552282-6dfa-457c-a754-5df13c9ddace"/>
       <field name="name" type="string" size="191" required="true" uuid="e214e29a-d27a-4d92-b1d2-2a0613bbcda0"/>
+      <field name="email" type="string" size="191" required="true" uuid="c06922dc-ddb0-482c-bb66-db9c611af5d4"/>
+      <index name="name_unique" unique="true" uuid="8ccc5b58-48e2-4c3c-8c25-af2fb3c430d7">
+        <index-field name="name" uuid="d9bfb269-df37-4610-be10-755e46c02b32"/>
+      </index>
+      <index name="email_unique" unique="true" uuid="3e101180-3641-450d-9b76-0b69dac2b8d2">
+        <index-field name="email" uuid="0d6744d2-003b-4ea8-b372-4e0f9c80180c"/>
+      </index>
     </entity>
     <entity name="\StreamCMS\User\Models\Role" local-name="Role" namespace="\StreamCMS\User\Models" uuid="8cd26915-aeef-4b63-ae2a-c975f0d4daae">
       <field name="id" type="integer" required="true" unique="true" primary="true" auto-increment="true" uuid="2d60c269-9e8f-458e-bc8e-a3994d92899c"/>

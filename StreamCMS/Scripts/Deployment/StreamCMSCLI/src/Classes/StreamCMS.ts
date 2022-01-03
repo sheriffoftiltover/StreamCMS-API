@@ -19,6 +19,10 @@ export class StreamCMS
 
     public parse(args): void
     {
+        // FIXME @sheriffoftiltover Update this to properly check/allow no args...
+        if (args.length === 3) {
+            args.push('');
+        }
         this.program.parse(args);
     }
 
@@ -37,8 +41,7 @@ export class StreamCMS
         const commandDir = path.join(__dirname, 'Commands', 'Types');
         const commandFiles = getFilesRecursive(commandDir, '.js', 1);
         commandFiles.map((commandFile) => {
-            const command = require(commandFile);
-            this.loadCommand(command);
+            this.loadCommand(require(commandFile));
         });
     }
 

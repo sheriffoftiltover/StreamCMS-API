@@ -9,6 +9,8 @@ use StreamCMS\Utility\Common\Exceptions\Database\ModelNotFoundException;
 
 abstract class AbstractDoctrineModel
 {
+//    abstract public function toArray(): array;
+
     abstract public static function getDatabase(): AbstractDoctrineDatabase;
 
     public static function getEntityName(): string
@@ -54,9 +56,24 @@ abstract class AbstractDoctrineModel
             );
     }
 
-
     public function refresh(): void
     {
         static::getDatabase()->getEntityManager()->refresh($this);
+    }
+
+    public function persist(): void
+    {
+        static::getDatabase()->getEntityManager()->persist($this);
+    }
+
+    public function flush(bool $flushAll = false): void
+    {
+        static::getDatabase()->getEntityManager()->flush(!$flushAll ? $this : null);
+    }
+
+    public function save(bool $flushAll = false): void
+    {
+        $this->persist();
+        $this->flush($flushAll);
     }
 }
