@@ -16,7 +16,7 @@
     </orm-attributes>
   </module>
   <visual-data>
-    <entity uuid="bb691cd6-5889-44b6-9c91-7c5a0aa3260f" bg-color="#FFFFFF" hdr-color="#D2D2D2" position-x="14" position-y="38" size-x="0" size-x2="96" size-y="0" size-y2="45"/>
-    <module uuid="927196a9-9f01-41ae-ac28-faf4faa4b148" bg-color="#FF8787" size-x="11" size-x2="864" size-y="-13" size-y2="241"/>
+    <entity uuid="bb691cd6-5889-44b6-9c91-7c5a0aa3260f" bg-color="#FFFFFF" hdr-color="#D2D2D2" position-x="64" position-y="163" size-x="0" size-x2="96" size-y="0" size-y2="59"/>
+    <module uuid="927196a9-9f01-41ae-ac28-faf4faa4b148" bg-color="#FF8787" size-x="11" size-x2="326" size-y="-13" size-y2="238"/>
   </visual-data>
 </skipper>

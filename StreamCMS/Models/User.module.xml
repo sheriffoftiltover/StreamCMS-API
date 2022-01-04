@@ -21,18 +21,13 @@
     <association from="\StreamCMS\User\Models\Role" to="\StreamCMS\Site\Models\Site" caption="Site Roles" owner-alias="roles" inverse-alias="site" many-owner="true" many-inverse="false" parent-required="true" uuid="9e8a7698-d8b6-4a55-8b55-ea9fc52e394e">
       <association-field from="siteId" to="id" uuid="abab43db-83b9-4fb8-bb6a-296334a36167"/>
     </association>
-    <entity name="\StreamCMS\User\Models\Permission" local-name="Permission" namespace="\StreamCMS\User\Models" uuid="b55b50ea-b2f2-4006-827f-2bafd94038cd">
-      <field name="id" type="integer" required="true" unique="true" primary="true" auto-increment="true" uuid="1a1e5273-7bc4-4e9c-ab11-34ea133871cf"/>
-      <field name="path" type="string" required="true" uuid="4f3ff61d-decb-4164-8f0c-85dc931592af"/>
-      <field name="method" type="string" size="7" required="true" uuid="3c0715d8-1051-4a45-a883-3f98d2ae04a0"/>
-    </entity>
     <entity name="\StreamCMS\User\Models\RoleSitePermission" local-name="RoleSitePermission" namespace="\StreamCMS\User\Models" uuid="6c203478-aafd-4128-81d1-4c2328b96db8">
       <field name="id" type="integer" required="true" unique="true" primary="true" auto-increment="true" uuid="423df032-4f67-436d-8bb8-3f410b2389fc"/>
       <field name="permissionId" type="integer" required="true" unique="true" uuid="e89d9e0f-c10b-488a-8630-2bd6536f4621"/>
       <field name="siteId" type="integer" required="true" unique="true" uuid="49b9bf8c-8b85-4ccd-9bab-4ad9428ae798"/>
       <field name="roleId" type="integer" required="true" unique="true" uuid="5931d995-87f0-4588-b16f-a89580c52ef3"/>
     </entity>
-    <association from="\StreamCMS\User\Models\RoleSitePermission" to="\StreamCMS\User\Models\Permission" caption="Permission RoleSitePermissions" owner-alias="roleSitePermissions" inverse-alias="permission" many-owner="false" many-inverse="false" parent-required="true" uuid="27198578-86cd-4126-a86e-4315b67877b0">
+    <association from="\StreamCMS\User\Models\RoleSitePermission" to="\StreamCMS\API\Models\Permission" caption="Permission RoleSitePermissions" owner-alias="roleSitePermissions" inverse-alias="permission" many-owner="false" many-inverse="false" parent-required="true" uuid="27198578-86cd-4126-a86e-4315b67877b0">
       <association-field from="permissionId" to="id" uuid="d3d42a1c-5a33-46c4-8268-8189d2b99503"/>
     </association>
     <association from="\StreamCMS\User\Models\RoleSitePermission" to="\StreamCMS\Site\Models\Site" caption="Site RoleSitePermissions" owner-alias="roleSitePermissions" inverse-alias="site" many-owner="false" many-inverse="false" parent-required="true" uuid="e3822fd0-a67e-492b-b3b0-369c14432a9b">
@@ -48,10 +43,9 @@
     </orm-attributes>
   </module>
   <visual-data>
-    <entity uuid="6c203478-aafd-4128-81d1-4c2328b96db8" bg-color="#FFFFFF" hdr-color="#D2D2D2" position-x="239" position-y="138" size-x="0" size-x2="115" size-y="0" size-y2="73"/>
-    <entity uuid="8cd26915-aeef-4b63-ae2a-c975f0d4daae" bg-color="#FFFFFF" hdr-color="#D2D2D2" position-x="-11" position-y="138" size-x="0" size-x2="101" size-y="0" size-y2="73"/>
-    <entity uuid="b55b50ea-b2f2-4006-827f-2bafd94038cd" bg-color="#FFFFFF" hdr-color="#D2D2D2" position-x="539" position-y="138" size-x="0" size-x2="99" size-y="0" size-y2="59"/>
-    <entity uuid="f46a5fab-59ef-433e-b5d7-b00786dd3dd8" bg-color="#FFFFFF" hdr-color="#D2D2D2" position-x="314" position-y="13" size-x="0" size-x2="101" size-y="0" size-y2="45"/>
+    <entity uuid="6c203478-aafd-4128-81d1-4c2328b96db8" bg-color="#FFFFFF" hdr-color="#D2D2D2" position-x="14" position-y="38" size-x="0" size-x2="115" size-y="0" size-y2="73"/>
+    <entity uuid="8cd26915-aeef-4b63-ae2a-c975f0d4daae" bg-color="#FFFFFF" hdr-color="#D2D2D2" position-x="238" position-y="26" size-x="0" size-x2="101" size-y="0" size-y2="73"/>
+    <entity uuid="f46a5fab-59ef-433e-b5d7-b00786dd3dd8" bg-color="#FFFFFF" hdr-color="#D2D2D2" position-x="488" position-y="13" size-x="0" size-x2="101" size-y="0" size-y2="59"/>
     <module uuid="45c16ebe-d4d0-4df7-bff5-553caf3f319b" bg-color="#FEFCE8" size-x="11" size-x2="639" size-y="12" size-y2="213"/>
   </visual-data>
 </skipper>

@@ -50,7 +50,7 @@ class Site extends StreamCMSModel
 
     public function __construct(string $host, Account $owner)
     {
-        $this->host = $host;
+        $this->host = strtolower($host);
         $this->owner = $owner;
 
         $this->roleSitePermissions = new ArrayCollection();

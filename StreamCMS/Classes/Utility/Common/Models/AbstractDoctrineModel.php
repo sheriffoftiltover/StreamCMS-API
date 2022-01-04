@@ -71,9 +71,10 @@ abstract class AbstractDoctrineModel
         static::getDatabase()->getEntityManager()->flush(!$flushAll ? $this : null);
     }
 
-    public function save(bool $flushAll = false): void
+    public function save(bool $flushAll = false): static
     {
         $this->persist();
         $this->flush($flushAll);
+        return $this;
     }
 }

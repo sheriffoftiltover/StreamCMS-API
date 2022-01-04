@@ -1,8 +1,6 @@
 <?php
 
-declare(strict_types=1);
-
-namespace StreamCMS\User\Models;
+namespace StreamCMS\Site\Models;
 
 use Doctrine\ORM\Mapping as ORM;
 

@@ -3,18 +3,20 @@
   <external-module storage-path="User.module.xml"/>
   <external-module storage-path="Chat.module.xml"/>
   <external-module storage-path="Site.module.xml"/>
+  <external-module storage-path="API.module.xml"/>
   <visual-data>
-    <association uuid="27198578-86cd-4126-a86e-4315b67877b0" caption1-position-x="1" caption1-position-y="3" center-position-x="0" center-position-y="0" color="#969696"/>
+    <association uuid="27198578-86cd-4126-a86e-4315b67877b0" caption1-position-x="1" caption1-position-y="3" center-position-x="0" center-position-y="-38" color="#969696"/>
     <association uuid="33ef88fa-8a61-4c69-840c-e110e672cb46" color="#969696"/>
-    <association uuid="62f2ab48-be30-47e5-9174-47d89bf6484c" caption1-position-x="-44" caption1-position-y="2" center-position-x="0" center-position-y="-8" color="#969696"/>
-    <association uuid="9e8a7698-d8b6-4a55-8b55-ea9fc52e394e" color="#969696"/>
-    <association uuid="cf83336a-6f69-4d00-b1bb-98568873d6d1" caption1-position-x="65" caption1-position-y="3" center-position-x="-26" center-position-y="0" color="#FFBF87"/>
-    <association uuid="d14033de-063f-448f-9e10-22876f53a0aa" color="#969696"/>
-    <association uuid="e3822fd0-a67e-492b-b3b0-369c14432a9b" caption1-position-x="0" caption1-position-y="0" center-position-x="0" center-position-y="-33" color="#969696"/>
-    <association uuid="e80b91e0-aaad-4021-990b-9071cc0e8c1a" caption1-position-x="76" caption1-position-y="-12" center-position-x="-26" center-position-y="0" color="#FFF187"/>
-    <module uuid="4494e472-df0a-496f-9823-6338c3b557e2" position-x="786" position-y="447"/>
-    <module uuid="45c16ebe-d4d0-4df7-bff5-553caf3f319b" position-x="61" position-y="437"/>
-    <module uuid="927196a9-9f01-41ae-ac28-faf4faa4b148" position-x="61" position-y="12"/>
-    <project uuid="be3ad206-f8c5-4f6b-b935-dac72f7c8eb7" size-x="0" size-x2="1451" size-y="0" size-y2="700"/>
+    <association uuid="62f2ab48-be30-47e5-9174-47d89bf6484c" caption1-position-x="-169" caption1-position-y="2" center-position-x="0" center-position-y="-8" color="#969696"/>
+    <association uuid="9e8a7698-d8b6-4a55-8b55-ea9fc52e394e" caption1-position-x="0" caption1-position-y="102" center-position-x="0" center-position-y="0" color="#969696"/>
+    <association uuid="cf83336a-6f69-4d00-b1bb-98568873d6d1" caption1-position-x="29" caption1-position-y="3" center-position-x="0" center-position-y="0" color="#FFBF87"/>
+    <association uuid="d14033de-063f-448f-9e10-22876f53a0aa" caption1-position-x="0" caption1-position-y="0" center-position-x="0" center-position-y="-69" color="#969696"/>
+    <association uuid="e3822fd0-a67e-492b-b3b0-369c14432a9b" caption1-position-x="16" caption1-position-y="2" center-position-x="0" center-position-y="-33" color="#969696"/>
+    <association uuid="e80b91e0-aaad-4021-990b-9071cc0e8c1a" caption1-position-x="31" caption1-position-y="-8" center-position-x="0" center-position-y="0" color="#FFF187"/>
+    <module uuid="4494e472-df0a-496f-9823-6338c3b557e2" position-x="896" position-y="437"/>
+    <module uuid="45c16ebe-d4d0-4df7-bff5-553caf3f319b" position-x="136" position-y="437"/>
+    <module uuid="927196a9-9f01-41ae-ac28-faf4faa4b148" position-x="274" position-y="12"/>
+    <module uuid="a66745bf-3d92-4b77-9f29-b187b03f0982" position-x="26" position-y="275"/>
+    <project uuid="be3ad206-f8c5-4f6b-b935-dac72f7c8eb7" size-x="0" size-x2="1325" size-y="0" size-y2="700"/>
   </visual-data>
 </skipper>
