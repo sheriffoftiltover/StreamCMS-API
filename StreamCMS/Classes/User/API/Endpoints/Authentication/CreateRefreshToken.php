@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace StreamCMS\User\API\Authentication;
+namespace StreamCMS\User\API\Endpoints\Authentication;
 
 use StreamCMS\Utility\Common\API\Abstractions\BaseAPIEndpoint;
 
-class GetRefreshToken extends BaseAPIEndpoint
+class CreateRefreshToken extends BaseAPIEndpoint
 {
     public function parse(): void
     {
@@ -20,5 +20,15 @@ class GetRefreshToken extends BaseAPIEndpoint
         // Return to user
         // Else Create a new token and store for TTL
         // Return token to user
+    }
+
+    public function getPath(): string
+    {
+        return '/token/refresh';
+    }
+
+    public function getMethod(): string
+    {
+        return 'POST';
     }
 }

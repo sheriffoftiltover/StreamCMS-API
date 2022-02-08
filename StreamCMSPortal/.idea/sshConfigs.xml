@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="SshConfigs">
+    <configs>
+      <sshConfig host="198.84.77.251" id="49a23dfe-bbcc-4260-93a4-3adffc535049" keyPath="Z:\Auths\Keys\HW_Dedi_Priv.ppk" port="22" nameFormat="DESCRIPTIVE" username="root" />
+    </configs>
+  </component>
+</project>

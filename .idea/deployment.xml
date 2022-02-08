@@ -5,7 +5,7 @@
       <paths name="HW_Dedi">
         <serverdata>
           <mappings>
-            <mapping deploy="/var/www/html" local="$PROJECT_DIR$/StreamCMS/Web/API" web="/" />
+            <mapping deploy="/var/www/html/api" local="$PROJECT_DIR$/StreamCMS/Web/API" web="/" />
             <mapping deploy="/var/www" local="$PROJECT_DIR$" />
           </mappings>
           <excludedPaths>

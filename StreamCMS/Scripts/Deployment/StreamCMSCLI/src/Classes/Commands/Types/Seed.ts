@@ -10,7 +10,8 @@ class Seed extends BaseCommand
     public run(...args): void
     {
         this.exec(
-            `/var/www/StreamCMS/vendor/robmorgan/phinx/bin/phinx seed:run`,
+            '/var/www/StreamCMS/vendor/robmorgan/phinx/bin/phinx',
+            ['seed:run'],
             {
                 cwd: "/var/www/StreamCMS/Scripts/Development/Phinx"
             }

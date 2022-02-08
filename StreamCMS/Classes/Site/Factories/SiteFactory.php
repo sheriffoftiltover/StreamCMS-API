@@ -13,7 +13,9 @@ final class SiteFactory
     {
         // Create the site
         $site = new Site($host, $owner);
-        // Create the default roles for the site
+        // TODO: Create the default roles for the site
 
+        $site->save();
+        return $site;
     }
 }

@@ -28,12 +28,12 @@ class Site extends StreamCMSModel
     private string $host;
 
     /**
-     * @ORM\OneToOne(targetEntity="StreamCMS\User\Models\RoleSitePermission", mappedBy="site")
+     * @ORM\OneToMany(targetEntity="StreamCMS\User\Models\RoleSitePermission", mappedBy="site")
      */
     private $roleSitePermissions;
 
     /**
-     * @ORM\OneToOne(targetEntity="StreamCMS\Chat\Models\PrivateMessage", mappedBy="site")
+     * @ORM\OneToMany(targetEntity="StreamCMS\Chat\Models\PrivateMessage", mappedBy="site")
      */
     private $privateMessages;
 

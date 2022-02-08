@@ -10,7 +10,11 @@ class Rebuild extends BaseCommand
     public run(...args): void
     {
         this.exec(
-            `StreamCMS composer build`,
+            'StreamCMS',
+            [
+                'composer',
+                'build',
+            ]
         );
     }
 

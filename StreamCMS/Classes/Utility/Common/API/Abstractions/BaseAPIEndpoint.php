@@ -8,13 +8,32 @@ use StreamCMS\Utility\Common\API\StreamCMSRequest;
 
 abstract class BaseAPIEndpoint
 {
-    public function __invoke(StreamCMSRequest $request)
+    protected StreamCMSRequest $request;
+    protected array $vars;
+    protected string $path;
+
+    public function handleRequest(): callable
     {
-        $this->parse();
-        return $this->run();
+        return function(StreamCMSRequest $request, array $vars, string $path): void {
+            $this->vars = $vars;
+            $this->request = $request;
+            $this->run();
+        };
     }
 
-    abstract public function parse(): void;
-
     abstract public function run();
+
+    abstract public function getPath(): string;
+
+    abstract public function getMethod(): string;
+
+    public static function getMap(): array
+    {
+        $instance = new static();
+        return [
+            $instance->getMethod(),
+            $instance->getPath(),
+            $instance->handleRequest()
+        ];
+    }
 }

@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace StreamCMS\Utility\Common\API\Abstractions\Routes;
 
-use League\Route\Router;
+use StreamCMS\Utility\Common\API\Abstractions\Router\StreamCMSRouter;
 
 abstract class AbstractRoutes
 {
-    public function __construct(protected Router $router)
+    public function __construct(protected StreamCMSRouter $router)
     {
         $this->addMiddleware();
         $this->defineRoutes();

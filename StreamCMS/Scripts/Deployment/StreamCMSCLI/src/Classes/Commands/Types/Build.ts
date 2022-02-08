@@ -23,7 +23,7 @@ class Build extends BaseCommand
     private buildDatabase(): void
     {
         // Clear the dir for our entities
-        this.exec('php /var/www/StreamCMS/Scripts/Deployment/Database/DatabaseBuilder.php');
+        this.exec('php', ['/var/www/StreamCMS/Scripts/Deployment/Database/DatabaseBuilder.php']);
     }
 }
 

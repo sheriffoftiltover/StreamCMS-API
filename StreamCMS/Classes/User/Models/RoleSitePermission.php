@@ -25,8 +25,9 @@ class RoleSitePermission
     private $permission;
 
     /**
-     * @ORM\OneToOne(targetEntity="StreamCMS\Site\Models\Site", inversedBy="roleSitePermissions")
-     * @ORM\JoinColumn(name="site_id", referencedColumnName="id", nullable=false, unique=true)
+     * 
+     * @ORM\JoinColumn(name="site_id", referencedColumnName="id", nullable=false)
+     * @ORM\ManyToOne(targetEntity="StreamCMS\Site\Models\Site", inversedBy="roleSitePermissions")
      */
     private $site;
 

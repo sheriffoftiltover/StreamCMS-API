@@ -24,13 +24,13 @@
     <entity name="\StreamCMS\User\Models\RoleSitePermission" local-name="RoleSitePermission" namespace="\StreamCMS\User\Models" uuid="6c203478-aafd-4128-81d1-4c2328b96db8">
       <field name="id" type="integer" required="true" unique="true" primary="true" auto-increment="true" uuid="423df032-4f67-436d-8bb8-3f410b2389fc"/>
       <field name="permissionId" type="integer" required="true" unique="true" uuid="e89d9e0f-c10b-488a-8630-2bd6536f4621"/>
-      <field name="siteId" type="integer" required="true" unique="true" uuid="49b9bf8c-8b85-4ccd-9bab-4ad9428ae798"/>
+      <field name="siteId" type="integer" required="true" uuid="49b9bf8c-8b85-4ccd-9bab-4ad9428ae798"/>
       <field name="roleId" type="integer" required="true" unique="true" uuid="5931d995-87f0-4588-b16f-a89580c52ef3"/>
     </entity>
     <association from="\StreamCMS\User\Models\RoleSitePermission" to="\StreamCMS\API\Models\Permission" caption="Permission RoleSitePermissions" owner-alias="roleSitePermissions" inverse-alias="permission" many-owner="false" many-inverse="false" parent-required="true" uuid="27198578-86cd-4126-a86e-4315b67877b0">
       <association-field from="permissionId" to="id" uuid="d3d42a1c-5a33-46c4-8268-8189d2b99503"/>
     </association>
-    <association from="\StreamCMS\User\Models\RoleSitePermission" to="\StreamCMS\Site\Models\Site" caption="Site RoleSitePermissions" owner-alias="roleSitePermissions" inverse-alias="site" many-owner="false" many-inverse="false" parent-required="true" uuid="e3822fd0-a67e-492b-b3b0-369c14432a9b">
+    <association from="\StreamCMS\User\Models\RoleSitePermission" to="\StreamCMS\Site\Models\Site" caption="Site RoleSitePermissions" owner-alias="roleSitePermissions" inverse-alias="site" many-owner="true" many-inverse="false" parent-required="true" uuid="e3822fd0-a67e-492b-b3b0-369c14432a9b">
       <association-field from="siteId" to="id" uuid="b87a151f-c6cf-4935-bd1e-5a12cba8f944"/>
     </association>
     <association from="\StreamCMS\User\Models\RoleSitePermission" to="\StreamCMS\User\Models\Role" caption="Role RoleSitePermissions" owner-alias="roleSitePermissions" inverse-alias="role" many-owner="false" many-inverse="false" parent-required="true" uuid="33ef88fa-8a61-4c69-840c-e110e672cb46">

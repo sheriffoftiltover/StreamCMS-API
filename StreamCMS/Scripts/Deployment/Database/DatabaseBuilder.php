@@ -7,7 +7,6 @@ require __DIR__ . '/../../../StreamCMSInit.php';
 use Doctrine\ORM\Tools\SchemaTool;
 use StreamCMS\Database\StreamCMS\StreamCMSDB;
 use StreamCMS\Database\StreamCMS\StreamCMSDBConfig;
-use StreamCMS\Utility\Common\Database\Relational\Config\AbstractDBConfig;
 
 StreamCMSDB::get()->getPDO()->exec("DROP DATABASE {$_ENV['STREAM_CMS_DB_NAME']}");
 StreamCMSDB::get()->getPDO()->exec("CREATE DATABASE {$_ENV['STREAM_CMS_DB_NAME']}");

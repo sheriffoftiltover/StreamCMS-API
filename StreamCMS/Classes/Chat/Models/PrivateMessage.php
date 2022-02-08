@@ -32,8 +32,9 @@ class PrivateMessage extends StreamCMSModel
     private bool $read;
 
     /**
-     * @ORM\OneToOne(targetEntity="StreamCMS\Site\Models\Site", inversedBy="privateMessages")
-     * @ORM\JoinColumn(name="site_id", referencedColumnName="id", unique=true, onDelete="SET NULL")
+     * 
+     * @ORM\JoinColumn(name="site_id", referencedColumnName="id", onDelete="SET NULL")
+     * @ORM\ManyToOne(targetEntity="StreamCMS\Site\Models\Site", inversedBy="privateMessages")
      */
     private Site|null $site;
 

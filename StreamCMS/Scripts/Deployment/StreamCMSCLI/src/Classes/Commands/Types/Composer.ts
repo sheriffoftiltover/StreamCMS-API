@@ -11,7 +11,8 @@ class Composer extends BaseCommand
     {
         let commandArgs = [...args];
         this.exec(
-            `composer ${commandArgs.join(' ')}`,
+            'composer',
+            commandArgs,
             {
                 cwd: "/var/www/StreamCMS"
             }
