@@ -2,16 +2,21 @@
 
 declare(strict_types=1);
 
-namespace StreamCMS\User\API\Endpoints\Authentication;
+namespace StreamCMS\User\API\Endpoints\Register;
 
 use Laminas\Diactoros\Response;
 use StreamCMS\Utility\Common\API\Abstractions\BaseAPIEndpoint;
 
-class CreateRefreshToken extends BaseAPIEndpoint
+class Twitch extends BaseAPIEndpoint
 {
+    private string|null $code;
+    private string|null $scope;
+
     public function parse(): void
     {
-        // TODO: Implement parse() method.
+        $body = $this->request->getParsedBody();
+        $this->code = $body['code'] ?? null;
+        $this->scope = $body['scope'] ?? null;
     }
 
     public function run(): Response|null
@@ -21,12 +26,12 @@ class CreateRefreshToken extends BaseAPIEndpoint
         // Return to user
         // Else Create a new token and store for TTL
         // Return token to user
-        return null;
+        return new Response\JsonResponse(['code' => $this->code, 'scope' => $this->scope]);
     }
 
     public function getPath(): string
     {
-        return '/token/refresh';
+        return '/register/twitch';
     }
 
     public function getMethod(): string

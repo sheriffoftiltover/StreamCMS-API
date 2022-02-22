@@ -178,7 +178,7 @@ class StreamCMSRequest implements ServerRequestInterface
     #[Pure]
     public function getQueryParams(): array
     {
-        return $this->serverRequest->getCookieParams();
+        return $this->serverRequest->getQueryParams();
     }
 
     #[Pure]
