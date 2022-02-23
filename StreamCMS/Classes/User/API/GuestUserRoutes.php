@@ -7,7 +7,7 @@ namespace StreamCMS\User\API;
 use League\Route\RouteGroup;
 use StreamCMS\User\API\Endpoints\Authentication\CreateRefreshToken;
 use StreamCMS\User\API\Endpoints\Register;
-use StreamCMS\Utility\Common\API\Abstractions\Routes\AbstractRoutes;
+use StreamCMS\Utility\API\Abstractions\Routes\AbstractRoutes;
 
 final class GuestUserRoutes extends AbstractRoutes
 {

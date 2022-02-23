@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace StreamCMS\User\API\Endpoints\Register;
 
 use Laminas\Diactoros\Response;
-use StreamCMS\Utility\Common\API\Abstractions\BaseAPIEndpoint;
+use StreamCMS\Utility\API\Abstractions\BaseAPIEndpoint;
 
 class Twitch extends BaseAPIEndpoint
 {

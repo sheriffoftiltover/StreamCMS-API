@@ -7,12 +7,12 @@ use Laminas\Diactoros\ResponseFactory;
 use Laminas\Diactoros\ServerRequestFactory;
 use Laminas\HttpHandlerRunner\Emitter\SapiEmitter;
 use League\Route\Router;
-use StreamCMS\Utility\Common\API\Abstractions\Router\StreamCMSRouter;
-use StreamCMS\Utility\Common\API\Middleware\ContextMiddleware\IdentityContextMiddleware;
-use StreamCMS\Utility\Common\API\Middleware\ContextMiddleware\SiteContextMiddleware;
-use StreamCMS\Utility\Common\API\Routes\StreamCMSRoutes;
-use StreamCMS\Utility\Common\API\Strategies\APIStrategy;
-use StreamCMS\Utility\Common\API\StreamCMSRequest;
+use StreamCMS\Utility\API\Abstractions\Router\StreamCMSRouter;
+use StreamCMS\Utility\API\Middleware\ContextMiddleware\IdentityContextMiddleware;
+use StreamCMS\Utility\API\Middleware\ContextMiddleware\SiteContextMiddleware;
+use StreamCMS\Utility\API\Routes\StreamCMSRoutes;
+use StreamCMS\Utility\API\Strategies\APIStrategy;
+use StreamCMS\Utility\API\StreamCMSRequest;
 
 $dirPath = __DIR__;
 
@@ -41,5 +41,10 @@ if ($request->getMethod() === 'OPTIONS') {
 } else {
     $response = $router->dispatch($request);
 }
+// FIXME @sheriffoftiltover Update this eventually
+//  TODO: Add system for handling CORS:
+//      https://stackoverflow.com/questions/32500073/request-header-field-access-control-allow-headers-is-not-allowed-by-itself-in-pr
+//      https://fetch.spec.whatwg.org/#http-cors-protocol
+$response = $response->withAddedHeader('Access-Control-Allow-Origin', '*');
 
 (new SapiEmitter())->emit($response);

@@ -6,7 +6,7 @@ namespace StreamCMS\Database\StreamCMS;
 
 use Doctrine\Common\Proxy\AbstractProxyFactory;
 use JetBrains\PhpStorm\Pure;
-use StreamCMS\Utility\Common\Database\Relational\Config\BaseDoctrineDBConfig;
+use StreamCMS\Utility\Database\Relational\Config\BaseDoctrineDBConfig;
 use StreamCMS\Utility\Files\FileSystem;
 
 final class StreamCMSDBConfig extends BaseDoctrineDBConfig
