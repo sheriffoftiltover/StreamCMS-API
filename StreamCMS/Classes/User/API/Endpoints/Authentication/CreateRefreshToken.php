@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace StreamCMS\User\API\Endpoints\Authentication;
 
-use Laminas\Diactoros\Response;
 use StreamCMS\Utility\API\Abstractions\BaseAPIEndpoint;
+use StreamCMS\Utility\API\Views\AbstractView;
 
 class CreateRefreshToken extends BaseAPIEndpoint
 {
@@ -14,7 +14,7 @@ class CreateRefreshToken extends BaseAPIEndpoint
         // TODO: Implement parse() method.
     }
 
-    public function run(): Response|null
+    public function run(): AbstractView|null
     {
         // Check if token for particular user exists in redis
         // If it does and the ttl is > 10 seconds

@@ -13,8 +13,9 @@ use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
-use StreamCMS\Utility\API\Middleware\ResponseMiddleware\JsonResponseMiddleware;
+use StreamCMS\Utility\API\Middleware\ResponseMiddleware\JsonErrorResponseMiddleware;
 use StreamCMS\Utility\API\Middleware\ResponseMiddleware\ThrowableMiddleware;
+use StreamCMS\Utility\API\ResponseFactories\ResponseFactory;
 use StreamCMS\Utility\API\StreamCMSRequest;
 use StreamCMS\Utility\Exceptions\API\InvalidRequestInstance;
 
@@ -31,21 +32,23 @@ final class APIStrategy implements StrategyInterface
             throw new InvalidRequestInstance('Must pass StreamCMSRequest into API Strategy.');
         }
         $controller = $route->getCallable();
-        return $controller($request, $route->getVars(), $route->getPath());
+        $response = $controller($request, $route->getVars(), $route->getPath());
+        ResponseFactory::addDefaultHeaders($response);
+        return $response;
     }
 
     // 404
     #[Pure]
     public function getNotFoundDecorator(NotFoundException $exception): MiddlewareInterface
     {
-        return new JsonResponseMiddleware($this->responseFactory, $exception);
+        return new JsonErrorResponseMiddleware($this->responseFactory, $exception);
     }
 
     // 405
     #[Pure]
     public function getMethodNotAllowedDecorator(MethodNotAllowedException $exception): MiddlewareInterface
     {
-        return new JsonResponseMiddleware($this->responseFactory, $exception);
+        return new JsonErrorResponseMiddleware($this->responseFactory, $exception);
     }
 
     #[Pure]

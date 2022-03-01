@@ -6,6 +6,7 @@ namespace StreamCMS\Utility\API\Abstractions;
 
 use Laminas\Diactoros\Response;
 use StreamCMS\Utility\API\StreamCMSRequest;
+use StreamCMS\Utility\API\Views\AbstractView;
 
 abstract class BaseAPIEndpoint
 {
@@ -18,11 +19,11 @@ abstract class BaseAPIEndpoint
         return function(StreamCMSRequest $request, array $vars, string $path): Response {
             $this->vars = $vars;
             $this->request = $request;
-            return $this->run() ?? new Response(null, 204);
+            return $this?->run()->getResponse() ?? new Response(null, 204);
         };
     }
 
-    abstract public function run(): Response|null;
+    abstract public function run(): AbstractView|null;
 
     abstract public function getPath(): string;
 

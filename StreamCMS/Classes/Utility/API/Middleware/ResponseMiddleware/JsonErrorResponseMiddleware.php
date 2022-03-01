@@ -10,8 +10,9 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
+use StreamCMS\Utility\API\ResponseFactories\ResponseFactory;
 
-final class JsonResponseMiddleware implements MiddlewareInterface
+final class JsonErrorResponseMiddleware implements MiddlewareInterface
 {
 
     public function __construct(private ResponseFactoryInterface $responseFactory, private Exception $exception)
@@ -27,6 +28,8 @@ final class JsonResponseMiddleware implements MiddlewareInterface
         foreach ($headers as $key => $val) {
             $response = $response->withAddedHeader($key, $val);
         }
+
+        ResponseFactory::addDefaultHeaders($response);
 
         // If our body is writable, we should add the body
         if ($response->getBody()->isWritable()) {

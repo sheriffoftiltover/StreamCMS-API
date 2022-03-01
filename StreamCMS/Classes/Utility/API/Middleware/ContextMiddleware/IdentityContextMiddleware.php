@@ -9,6 +9,7 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
+use StreamCMS\Utility\API\Abstractions\Middleware\StreamCMSHeaderMiddleware;
 use StreamCMS\Utility\API\RequestContexts\IdentityContext;
 use StreamCMS\Utility\API\StreamCMSRequest;
 
@@ -18,7 +19,7 @@ use StreamCMS\Utility\API\StreamCMSRequest;
  * Adds identity context to the request
  * Extracts the token from the header if it exists and uses it to update the identity context on the request.
  */
-class IdentityContextMiddleware implements MiddlewareInterface
+class IdentityContextMiddleware extends StreamCMSHeaderMiddleware
 {
     public function process(ServerRequestInterface|StreamCMSRequest $request, RequestHandlerInterface $handler): ResponseInterface
     {
@@ -34,5 +35,10 @@ class IdentityContextMiddleware implements MiddlewareInterface
         // Set the identity context on the request
         $request->setIdentityContext($identityContext);
         return $handler->handle($request);
+    }
+
+    public function getHeaderName(): string
+    {
+        return 'X-STREAM-CMS-TOKEN';
     }
 }
