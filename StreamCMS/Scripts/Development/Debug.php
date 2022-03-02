@@ -11,16 +11,23 @@ use StreamCMS\Utility\Logging\LogUtil;
 
 require '../../StreamCMSInit.php';
 
+$authCode = 'dv15xgn6d6ay43n3pzjis6yjdkc16f';
+$grantType = 'authorization_code';
+
+
 $client = new Client([
-    'base_uri' => 'https://api.streamcms.dev',
+    'base_uri' => 'https://id.twitch.tv'
 ]);
-$res = $client->post(
-    '/account/register/twitch',
+$response = $client->post(
+    '/oauth2/token',
     [
         'json' => [
-            'code' => 123,
-            'user_scope' => '1231324',
+            'client_id' => $_ENV['TWITCH_CLIENT_ID'],
+            'client_secret' => $_ENV['TWITCH_CLIENT_SECRET'],
+            'code' => $authCode,
+            'grant_type' => $grantType,
+            'redirect_uri' => $_ENV['TWITCH_REDIRECT_URL'],
         ]
     ]
 );
-dump($res->getBody()->getContents());
+dump($response->getBody()->getContents());

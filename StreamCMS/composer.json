@@ -30,7 +30,7 @@
         "nesbot/carbon": "~2.49",
         "symfony/console": "~4.4",
         "adhocore/jwt": "*",
-        "defuse/php-encryption": "~2.3",
+        "defuse/php-encryption": "~2.3"
     },
     "require-dev": {
         "fakerphp/faker": "~1.14",

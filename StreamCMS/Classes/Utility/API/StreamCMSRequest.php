@@ -29,6 +29,11 @@ class StreamCMSRequest implements ServerRequestInterface
 
     public function __construct(protected ServerRequest $serverRequest)
     {
+        $contentTypeHeader = $serverRequest->getHeader('Content-Type')[0] ?? '';
+        $contentType = substr($contentTypeHeader, 0, strpos($contentTypeHeader, ';') ?: strlen($contentTypeHeader));
+        if ($contentType === 'application/json') {
+            $this->serverRequest = $this->serverRequest->withParsedBody(\json_decode($serverRequest->getBody()->getContents() ?: '[]', true, 512, JSON_THROW_ON_ERROR));
+        }
     }
 
     public function getIdentityContext(): IdentityContext
