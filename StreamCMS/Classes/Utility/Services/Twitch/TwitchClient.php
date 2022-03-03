@@ -9,19 +9,23 @@ use Psr\Http\Message\ResponseInterface;
 
 class TwitchClient
 {
-    private Client $client;
+    private Client $idClient;
+    private Client $apiClient;
 
     public function __construct()
     {
-        $this->client = new Client([
+        $this->idClient = new Client([
             'base_uri' => 'https://id.twitch.tv'
+        ]);
+        $this->apiClient = new Client([
+            'base_uri' => 'https://api.twitch.tv'
         ]);
     }
 
     public function getAccessToken(string $authCode, string $grantType): array
     {
         return $this->getResponseData(
-            $this->client->post(
+            $this->idClient->post(
                 '/oauth2/token',
                 [
                     'json' => [
@@ -33,6 +37,21 @@ class TwitchClient
                     ]
                 ]
             ),
+        );
+    }
+
+    public function getUser(TwitchAuth $twitchAuth): array
+    {
+        return $this->getResponseData(
+            $this->apiClient->get(
+                '/helix/users',
+                [
+                    'headers' => [
+                        'Authorization' => "Bearer {$twitchAuth->getAccessToken()}",
+                        'Client-Id' => $this->getClientId(),
+                    ],
+                ]
+            )
         );
     }
 

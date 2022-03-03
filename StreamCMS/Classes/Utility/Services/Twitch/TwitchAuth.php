@@ -7,28 +7,28 @@ namespace StreamCMS\Utility\Services\Twitch;
 class TwitchAuth
 {
     public function __construct(
-        private string $accessToken,
-        private int $expiresIn,
-        private string $refreshToken,
+        private string $access_token,
+        private int $expires_in,
+        private string $refresh_token,
         private array $scope,
-        private string $tokenType,
+        private string $token_type,
     )
     {
     }
 
     public function getAccessToken(): string
     {
-        return $this->accessToken;
+        return $this->access_token;
     }
 
     public function getExpiresIn(): int
     {
-        return $this->expiresIn;
+        return $this->expires_in;
     }
 
     public function getRefreshToken(): string
     {
-        return $this->refreshToken;
+        return $this->refresh_token;
     }
 
     public function getScope(): array
@@ -38,6 +38,6 @@ class TwitchAuth
 
     public function getTokenType(): string
     {
-        return $this->tokenType;
+        return $this->token_type;
     }
 }
