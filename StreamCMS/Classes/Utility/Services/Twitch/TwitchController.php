@@ -6,26 +6,21 @@ namespace StreamCMS\Utility\Services\Twitch;
 
 class TwitchController
 {
+    private TwitchClient $twitchClient;
+    private TwitchAuth|null $twitchAuth = null;
+
     public function __construct()
     {
-
+        $this->twitchClient = new TwitchClient();
     }
 
-    public function getAccessToken(string $authCode, string $grantType): array
+    public function setTwitchAuth(string $authCode, string $grantType): void
     {
-        return $this->getResponseData(
-            $this->client->post(
-                '/oauth2/token',
-                [
-                    'json' => [
-                        'client_id' => $this->getClientId(),
-                        'client_secret' => $this->getClientSecret(),
-                        'code' => $authCode,
-                        'grant_type' => $grantType,
-                        'redirect_uri' => $this->getRedirectUrl(),
-                    ]
-                ]
-            ),
-        );
+        $this->twitchAuth = new TwitchAuth(...$this->twitchClient->getAccessToken($authCode, $grantType));
+    }
+
+    public function getTwitchAuth(): TwitchAuth
+    {
+        return $this->twitchAuth;
     }
 }

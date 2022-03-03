@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace StreamCMS\User\API\Endpoints\Register;
 
-use StreamCMS\User\API\Views\Register\Twitch\DebugOutputView;
-use StreamCMS\Utility\API\Abstractions\BaseAPIEndpoint;
+use StreamCMS\API\Abstractions\BaseAPIEndpoint;
+use StreamCMS\API\Views\DebugOutputView;
 
 class Twitch extends BaseAPIEndpoint
 {

@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace StreamCMS\User\API\Endpoints\Authentication;
 
-use StreamCMS\Utility\API\Abstractions\BaseAPIEndpoint;
-use StreamCMS\Utility\API\Views\AbstractView;
+use StreamCMS\API\Abstractions\BaseAPIEndpoint;
+use StreamCMS\API\Views\AbstractView;
 
 class CreateRefreshToken extends BaseAPIEndpoint
 {

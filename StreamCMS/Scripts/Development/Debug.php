@@ -6,7 +6,7 @@ use GuzzleHttp\Client;
 use StreamCMS\Config\LogConfig;
 use StreamCMS\Site\Models\Site;
 use StreamCMS\User\Models\Account;
-use StreamCMS\Utility\API\Tokens\IdentityRefreshToken;
+use StreamCMS\API\Tokens\IdentityRefreshToken;
 use StreamCMS\Utility\Logging\LogUtil;
 
 require '../../StreamCMSInit.php';
