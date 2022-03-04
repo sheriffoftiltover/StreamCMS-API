@@ -6,6 +6,7 @@ namespace StreamCMS\Utility\Services\Twitch;
 
 use GuzzleHttp\Client;
 use Psr\Http\Message\ResponseInterface;
+use StreamCMS\Utility\Data\Arrays;
 
 class TwitchClient
 {
@@ -72,6 +73,6 @@ class TwitchClient
 
     private function getResponseData(ResponseInterface $response): array
     {
-        return json_decode($response->getBody()->getContents(), true, JSON_THROW_ON_ERROR);
+        return Arrays::camelCaseKeys(json_decode($response->getBody()->getContents(), true, JSON_THROW_ON_ERROR));
     }
 }

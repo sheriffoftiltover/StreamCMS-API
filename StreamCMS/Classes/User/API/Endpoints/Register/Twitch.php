@@ -6,22 +6,24 @@ namespace StreamCMS\User\API\Endpoints\Register;
 
 use StreamCMS\API\Abstractions\BaseAPIEndpoint;
 use StreamCMS\API\Views\DebugOutputView;
+use StreamCMS\Utility\Services\Twitch\TwitchController;
 
 class Twitch extends BaseAPIEndpoint
 {
-    private string|null $code;
-    private string|null $scope;
+    private TwitchController $twitchController;
 
     public function parse(): void
     {
-
+        $body = $this->request->getParsedBody();
+        $code = $body['code'] ?? null;
+        $scope = $body['scope'] ?? null;
+        $this->twitchController = new TwitchController();
+        $this->twitchController->setTwitchAuth($code, $scope);
     }
 
     public function run(): DebugOutputView|null
     {
-        $body = $this->request->getParsedBody();
-        $this->code = $body['code'] ?? null;
-        $this->scope = $body['scope'] ?? null;
+        $this->twitchController->getTwitchUser();
         // Check if token for particular user exists in redis
         // If it does and the ttl is > 10 seconds
         // Return to user
