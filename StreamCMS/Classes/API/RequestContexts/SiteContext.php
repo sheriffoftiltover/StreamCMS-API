@@ -22,7 +22,7 @@ class SiteContext
         $this->domain = null;
     }
 
-    public function getSite(): ?string
+    public function getSite(): ?Site
     {
         return $this->site;
     }

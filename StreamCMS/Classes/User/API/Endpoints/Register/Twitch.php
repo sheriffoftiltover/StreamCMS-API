@@ -5,31 +5,48 @@ declare(strict_types=1);
 namespace StreamCMS\User\API\Endpoints\Register;
 
 use StreamCMS\API\Abstractions\BaseAPIEndpoint;
-use StreamCMS\API\Views\DebugOutputView;
+use StreamCMS\API\Abstractions\Interfaces\HasBodyInterface;
+use StreamCMS\Site\Models\Site;
+use StreamCMS\User\API\Views\Tokens\RefreshTokenView;
+use StreamCMS\User\Controllers\AccountProviders\TwitchAccountProvider;
+use StreamCMS\User\Controllers\Authentication\RefreshTokenController;
 use StreamCMS\Utility\Services\Twitch\TwitchController;
 
-class Twitch extends BaseAPIEndpoint
+class Twitch extends BaseAPIEndpoint implements HasBodyInterface
 {
     private TwitchController $twitchController;
+    private Site|null $site;
+    private string|null $code;
+    private string|null $scope;
 
-    public function parse(): void
+    public function parseRequest(): void
     {
         $body = $this->request->getParsedBody();
-        $code = $body['code'] ?? null;
-        $scope = $body['scope'] ?? null;
-        $this->twitchController = new TwitchController();
-        $this->twitchController->setTwitchAuth($code, $scope);
+        $this->code = $body['code'] ?? null;
+        $this->scope = $body['scope'] ?? null;
+
+        $this->site = $this->request->getSiteContext()->getSite();
     }
 
-    public function run(): DebugOutputView|null
+    public function validateRequest(): void
     {
-        $this->twitchController->getTwitchUser();
-        // Check if token for particular user exists in redis
-        // If it does and the ttl is > 10 seconds
-        // Return to user
-        // Else Create a new token and store for TTL
-        // Return token to user
-        return new DebugOutputView(['code' => $this->code, 'scope' => $this->scope]);
+        if ($this->site === null) {
+            // TODO: Refactor this into a standard way of error handling.
+            throw new \Exception('Invalid Site.');
+        }
+        if ($this->code === null || $this->scope === null) {
+            // TODO: Refactor this into a standard way of error handling.
+            throw new \Exception('Invalid Code/Scope.');
+        }
+        $this->twitchController = new TwitchController();
+        $this->twitchController->setTwitchAuth($this->code, $this->scope);
+    }
+
+    public function run(): RefreshTokenView|null
+    {
+        $account = (new TwitchAccountProvider($this->twitchController->getTwitchUser()))->getAccount();
+        $token = (new RefreshTokenController($account, $this->site))->getRefreshToken();
+        return new RefreshTokenView($token);
     }
 
     public function getPath(): string

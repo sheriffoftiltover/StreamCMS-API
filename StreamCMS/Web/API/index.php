@@ -42,7 +42,6 @@ new StreamCMSRoutes($router);
 
 if ($request->getMethod() === 'OPTIONS') {
     $response = new Response('php://memory', 200, $responseFactory::getDefaultHeaders());
-    LogUtil::info('Access-Control-Allow-Headers', ['wtf' => $response->getHeader('Access-Control-Allow-Headers')]);
 } else {
     $response = $router->dispatch($request);
 }

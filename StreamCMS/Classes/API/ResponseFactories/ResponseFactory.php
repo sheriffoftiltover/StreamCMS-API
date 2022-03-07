@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace StreamCMS\API\ResponseFactories;
 
-use Laminas\Diactoros\Response;
 use Psr\Http\Message\ResponseInterface;
 
 class ResponseFactory extends \Laminas\Diactoros\ResponseFactory
