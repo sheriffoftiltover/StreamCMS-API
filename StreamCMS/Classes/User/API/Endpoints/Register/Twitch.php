@@ -17,14 +17,11 @@ class Twitch extends BaseAPIEndpoint implements HasBodyInterface
     private TwitchController $twitchController;
     private Site|null $site;
     private string|null $code;
-    private string|null $scope;
 
     public function parseRequest(): void
     {
         $body = $this->request->getParsedBody();
         $this->code = $body['code'] ?? null;
-        $this->scope = $body['scope'] ?? null;
-
         $this->site = $this->request->getSiteContext()->getSite();
     }
 
@@ -34,12 +31,12 @@ class Twitch extends BaseAPIEndpoint implements HasBodyInterface
             // TODO: Refactor this into a standard way of error handling.
             throw new \Exception('Invalid Site.');
         }
-        if ($this->code === null || $this->scope === null) {
+        if ($this->code === null) {
             // TODO: Refactor this into a standard way of error handling.
-            throw new \Exception('Invalid Code/Scope.');
+            throw new \Exception('Invalid Code.');
         }
         $this->twitchController = new TwitchController();
-        $this->twitchController->setTwitchAuth($this->code, $this->scope);
+        $this->twitchController->setTwitchAuth($this->code, 'authorization_code');
     }
 
     public function run(): RefreshTokenView|null

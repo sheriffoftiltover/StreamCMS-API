@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace StreamCMS\API\RequestContexts;
 
 use StreamCMS\Site\Models\Site;
+use StreamCMS\Utility\Logging\LogUtil;
 
 /**
  * Class SiteContext
@@ -31,7 +32,9 @@ class SiteContext
     {
         $this->domain = $domain;
         if ($domain !== null) {
-            $this->site = Site::findOneBy(['domain' => $domain]);
+            LogUtil::debug("Domain: {$domain}");
+            $this->site = Site::findOneBy(['host' => $domain]);
+            LogUtil::debug("SiteContext::\$site: {$this->site->getHost()}");
         }
     }
 }

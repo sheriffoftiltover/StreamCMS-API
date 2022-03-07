@@ -10,8 +10,6 @@ use StreamCMS\Utility\Services\Twitch\TwitchUser;
 
 class TwitchAccountProvider extends AbstractAccountProvider
 {
-    private ?Account $account = null;
-
     public function __construct(protected TwitchUser $twitchUser)
     {
     }
@@ -22,7 +20,7 @@ class TwitchAccountProvider extends AbstractAccountProvider
         $account = Account::findOneBy(['email' => $this->twitchUser->getEmail()]);
         // If we don't have an account, create one.
         if ($account === null) {
-            $account = AccountFactory::create($this->twitchUser->getDisplayName(), $this->account->getEmail());
+            $account = AccountFactory::create($this->twitchUser->getDisplayName(), $this->twitchUser->getEmail());
         }
         return $account;
     }

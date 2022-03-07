@@ -43,7 +43,7 @@ class TwitchClient
 
     public function getUser(TwitchAuth $twitchAuth): array
     {
-        return $this->getResponseData(
+        $response = $this->getResponseData(
             $this->apiClient->get(
                 '/helix/users',
                 [
@@ -54,6 +54,8 @@ class TwitchClient
                 ]
             )
         );
+        dump($response);
+        return $response['data'][0];
     }
 
     private function getRedirectUrl(): string

@@ -11,6 +11,7 @@ use Psr\Http\Server\RequestHandlerInterface;
 use StreamCMS\API\Abstractions\Middleware\StreamCMSHeaderMiddleware;
 use StreamCMS\API\RequestContexts\SiteContext;
 use StreamCMS\API\StreamCMSRequest;
+use StreamCMS\Utility\Logging\LogUtil;
 
 class SiteContextMiddleware extends StreamCMSHeaderMiddleware
 {
@@ -23,6 +24,7 @@ class SiteContextMiddleware extends StreamCMSHeaderMiddleware
         // Construct our site context
         $siteContext = new SiteContext();
         $siteContext->setSite($this->getHeader($request));
+        LogUtil::info("Site: {$siteContext->getSite()->getHost()}");
         // Set the identity context on the request
         $request->setSiteContext($siteContext);
         return $handler->handle($request);
