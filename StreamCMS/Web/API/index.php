@@ -12,7 +12,6 @@ use StreamCMS\API\ResponseFactories\ResponseFactory;
 use StreamCMS\API\Routes\StreamCMSRoutes;
 use StreamCMS\API\Strategies\APIStrategy;
 use StreamCMS\API\StreamCMSRequest;
-use StreamCMS\Utility\Logging\LogUtil;
 
 $dirPath = __DIR__;
 

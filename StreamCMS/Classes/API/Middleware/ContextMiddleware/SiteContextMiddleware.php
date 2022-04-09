@@ -11,7 +11,7 @@ use Psr\Http\Server\RequestHandlerInterface;
 use StreamCMS\API\Abstractions\Middleware\StreamCMSHeaderMiddleware;
 use StreamCMS\API\RequestContexts\SiteContext;
 use StreamCMS\API\StreamCMSRequest;
-use StreamCMS\Utility\Logging\LogUtil;
+use StreamCMS\Core\Logging\LogUtil;
 
 class SiteContextMiddleware extends StreamCMSHeaderMiddleware
 {

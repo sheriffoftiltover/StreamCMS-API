@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace StreamCMS\Utility\Models;
 
-use StreamCMS\Utility\Database\Relational\AbstractDoctrineDatabase;
-use StreamCMS\Utility\Exceptions\Database\ModelNotFoundException;
+use StreamCMS\Core\Database\Relational\AbstractDoctrineDatabase;
+use StreamCMS\Core\Exceptions\Database\ModelNotFoundException;
 
 abstract class AbstractDoctrineModel
 {

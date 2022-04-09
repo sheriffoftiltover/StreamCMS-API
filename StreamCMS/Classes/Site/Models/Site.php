@@ -6,7 +6,6 @@ namespace StreamCMS\Site\Models;
 
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
-use Doctrine\ORM\Mapping as ORM;
 use StreamCMS\Database\StreamCMS\StreamCMSModel;
 use StreamCMS\User\Models\Account;
 

@@ -17,7 +17,7 @@ use StreamCMS\API\Middleware\ResponseMiddleware\JsonErrorResponseMiddleware;
 use StreamCMS\API\Middleware\ResponseMiddleware\ThrowableMiddleware;
 use StreamCMS\API\ResponseFactories\ResponseFactory;
 use StreamCMS\API\StreamCMSRequest;
-use StreamCMS\Utility\Exceptions\API\InvalidRequestInstance;
+use StreamCMS\Core\Exceptions\API\InvalidRequestInstance;
 
 final class APIStrategy implements StrategyInterface
 {

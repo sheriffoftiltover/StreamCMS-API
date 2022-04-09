@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace StreamCMS\API\Routes;
 
-use League\Route\Router;
-use StreamCMS\User\API\GuestUserRoutes;
-use StreamCMS\User\API\UserRoutes;
+use StreamCMS\API\Abstractions\Router\StreamCMSRouter;
+use StreamCMS\User\API\Endpoints\GuestUserRoutes;
+use StreamCMS\User\API\Endpoints\UserRoutes;
 
 final class StreamCMSRoutes
 {
-    public function __construct(Router $router)
+    public function __construct(StreamCMSRouter $router)
     {
         // Add user routes
         new GuestUserRoutes($router);

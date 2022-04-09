@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 // Require the autoloader
-use StreamCMS\Utility\Logging\LogUtil;
+use StreamCMS\Core\Logging\LogUtil;
 use Symfony\Component\Dotenv\Dotenv;
 
 // Define our base path.

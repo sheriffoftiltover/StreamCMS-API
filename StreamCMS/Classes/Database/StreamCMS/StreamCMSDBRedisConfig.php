@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace StreamCMS\Database\StreamCMS;
 
-use StreamCMS\Utility\Database\KeyValue\Config\AbstractRedisConfig;
+use StreamCMS\Core\Database\KeyValue\Config\AbstractRedisConfig;
 
 final class StreamCMSDBRedisConfig extends AbstractRedisConfig
 {

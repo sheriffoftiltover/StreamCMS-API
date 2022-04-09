@@ -133,7 +133,7 @@
   <component name="PhpInterpreters">
     <interpreters>
       <interpreter id="3ac1504b-b6cf-4ff4-ad63-da94d46787d1" name="root@198.84.77.251:22 key" home="sshConfig://DATA" debugger_id="php.debugger.XDebug">
-        <remote_data INTERPRETER_PATH="/usr/bin/php" HELPERS_PATH="/root/.phpstorm_helpers" INITIALIZED="false" VALID="true" RUN_AS_ROOT_VIA_SUDO="false" SSH_CONFIG_ID="568b4595-9a9b-4211-bc81-ac8a4bcf06e3" SSH_CONFIG_NAME="root@198.84.77.251:22 key" SSH_CREDENTIALS_ID="sshConfig://root@198.84.77.251:22 key" />
+        <remote_data INTERPRETER_PATH="/usr/bin/php" HELPERS_PATH="/root/.phpstorm_helpers" INITIALIZED="false" VALID="true" RUN_AS_ROOT_VIA_SUDO="false" SSH_CONFIG_ID="568b4595-9a9b-4211-bc81-ac8a4bcf06e3" SSH_CONFIG_NAME="root@198.84.77.251:22 agent" SSH_CREDENTIALS_ID="sshConfig://root@198.84.77.251:22 agent" />
       </interpreter>
     </interpreters>
   </component>

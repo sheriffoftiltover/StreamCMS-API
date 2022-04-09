@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace StreamCMS\Chat\Models;
 
-use Doctrine\ORM\Mapping as ORM;
 use StreamCMS\Database\StreamCMS\StreamCMSModel;
 use StreamCMS\Site\Models\Site;
 use StreamCMS\User\Models\Account;

@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace StreamCMS\API\RequestContexts;
 
+use StreamCMS\Core\Logging\LogUtil;
 use StreamCMS\Site\Models\Site;
-use StreamCMS\Utility\Logging\LogUtil;
 
 /**
  * Class SiteContext

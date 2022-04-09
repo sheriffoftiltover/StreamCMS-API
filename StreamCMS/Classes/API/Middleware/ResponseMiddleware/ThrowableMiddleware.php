@@ -10,7 +10,7 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
-use StreamCMS\Utility\Environment\Env;
+use StreamCMS\Core\Environment\Env;
 
 class ThrowableMiddleware implements MiddlewareInterface
 {
