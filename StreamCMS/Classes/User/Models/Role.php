@@ -8,6 +8,7 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use StreamCMS\Database\StreamCMS\StreamCMSModel;
 use StreamCMS\Site\Models\Site;
+use Doctrine\ORM\Mapping as ORM;
 
 /**
  * @ORM\Entity

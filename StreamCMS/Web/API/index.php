@@ -5,13 +5,13 @@ declare(strict_types=1);
 use Laminas\Diactoros\Response;
 use Laminas\Diactoros\ServerRequestFactory;
 use Laminas\HttpHandlerRunner\Emitter\SapiEmitter;
-use StreamCMS\API\Abstractions\Router\StreamCMSRouter;
-use StreamCMS\API\Middleware\ContextMiddleware\IdentityContextMiddleware;
-use StreamCMS\API\Middleware\ContextMiddleware\SiteContextMiddleware;
-use StreamCMS\API\ResponseFactories\ResponseFactory;
+use StreamCMS\Core\API\Abstractions\Router\StreamCMSRouter;
+use StreamCMS\Core\API\Middleware\ContextMiddleware\IdentityContextMiddleware;
+use StreamCMS\Core\API\Middleware\ContextMiddleware\SiteContextMiddleware;
+use StreamCMS\Core\API\ResponseFactories\ResponseFactory;
 use StreamCMS\API\Routes\StreamCMSRoutes;
-use StreamCMS\API\Strategies\APIStrategy;
-use StreamCMS\API\StreamCMSRequest;
+use StreamCMS\Core\API\Strategies\APIStrategy;
+use StreamCMS\Core\API\StreamCMSRequest;
 
 $dirPath = __DIR__;
 

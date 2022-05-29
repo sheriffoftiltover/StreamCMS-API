@@ -1,0 +1,1 @@
+- [ ] Keep track of authentication providers

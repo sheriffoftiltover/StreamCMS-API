@@ -9,6 +9,7 @@ use Doctrine\Common\Collections\Collection;
 use StreamCMS\Chat\Models\PrivateMessage;
 use StreamCMS\Database\StreamCMS\StreamCMSModel;
 use StreamCMS\Site\Models\Site;
+use Doctrine\ORM\Mapping as ORM;
 
 /**
  * @ORM\Entity

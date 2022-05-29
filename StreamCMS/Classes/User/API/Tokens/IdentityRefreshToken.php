@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace StreamCMS\User\API\Tokens;
 
-use StreamCMS\API\Tokens\AbstractToken;
+use StreamCMS\Core\API\Tokens\AbstractToken;
 use StreamCMS\Core\Security\Tokens\AbstractJWT;
 use StreamCMS\Core\Security\Tokens\IdentityRefreshJWT;
 use StreamCMS\User\Models\Account;

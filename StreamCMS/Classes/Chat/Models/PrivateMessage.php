@@ -7,6 +7,7 @@ namespace StreamCMS\Chat\Models;
 use StreamCMS\Database\StreamCMS\StreamCMSModel;
 use StreamCMS\Site\Models\Site;
 use StreamCMS\User\Models\Account;
+use Doctrine\ORM\Mapping as ORM;
 
 /**
  * @ORM\Entity

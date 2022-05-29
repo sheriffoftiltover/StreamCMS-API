@@ -6,7 +6,7 @@ namespace StreamCMS\User\Controllers\AccountProviders;
 
 use StreamCMS\User\Factories\AccountFactory;
 use StreamCMS\User\Models\Account;
-use StreamCMS\Utility\Services\Twitch\TwitchUser;
+use StreamCMS\Core\Utility\Services\Twitch\TwitchUser;
 
 class TwitchAccountProvider extends AbstractAccountProvider
 {

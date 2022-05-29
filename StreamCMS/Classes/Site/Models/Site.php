@@ -8,6 +8,7 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use StreamCMS\Database\StreamCMS\StreamCMSModel;
 use StreamCMS\User\Models\Account;
+use Doctrine\ORM\Mapping as ORM;
 
 /**
  * @ORM\Entity
@@ -41,17 +42,9 @@ class Site extends StreamCMSModel
      */
     private $roles;
 
-    /**
-     * @ORM\ManyToOne(targetEntity="StreamCMS\User\Models\Account", inversedBy="sites")
-     * @ORM\JoinColumn(name="owner_id", referencedColumnName="id", nullable=false)
-     */
-    private Account $owner;
-
-    public function __construct(string $host, Account $owner)
+    public function __construct(string $host, private Account $owner)
     {
         $this->host = strtolower($host);
-        $this->owner = $owner;
-
         $this->roleSitePermissions = new ArrayCollection();
         $this->privateMessages = new ArrayCollection();
         $this->roles = new ArrayCollection();

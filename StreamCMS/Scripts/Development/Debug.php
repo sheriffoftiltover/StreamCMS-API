@@ -3,10 +3,12 @@
 declare(strict_types=1);
 
 use GuzzleHttp\Client;
+use StreamCMS\Core\Logging\LogUtil;
 use StreamCMS\Site\Models\Site;
+use StreamCMS\User\API\Tokens\IdentityRefreshToken;
 use StreamCMS\User\Controllers\AccountProviders\TwitchAccountProvider;
-use StreamCMS\User\Controllers\Authentication\RefreshTokenController;
-use StreamCMS\Utility\Services\Twitch\TwitchController;
+use StreamCMS\Core\Utility\Services\Twitch\TwitchController;
+use StreamCMS\User\Models\Account;
 
 require '../../StreamCMSInit.php';
 
@@ -20,13 +22,17 @@ require '../../StreamCMSInit.php';
 //dump(Site::findOneBy(['host' => 'streamcms.dev']));
 //
 //exit;
+//
+//$code = 'm9ehftxd35osiqjvbr4hr33u8xx4a1';
+//$scope = 'user_read';
+//
+//$twitchController = new TwitchController();
+//$twitchController->setTwitchAuth($code, 'authorization_code');
+//$account = (new TwitchAccountProvider($twitchController->getTwitchUser()))->getAccount();
+//
+//$site = Site::findOneBy(['host' => 'streamcms.dev']);
+//$token = (new TwitchController($account, $site))->getRefreshToken();
+//dump($token);
 
-$code = 'l32lp5tpj2mwfa063ev5627isetlyl';
-$scope = 'user_read';
-
-$twitchController = new TwitchController();
-$twitchController->setTwitchAuth($code, 'authorization_code');
-$account = (new TwitchAccountProvider($twitchController->getTwitchUser()))->getAccount();
-$site = Site::findOneBy(['host' => 'streamcms.dev']);
-$token = (new RefreshTokenController($account, $site))->getRefreshToken();
-dump($token);
+//$account = Account::getOneBy(['email' => 'sheriffoftiltover@hotmail.com']);
+//dump('Wtf ' . IdentityRefreshToken::create($account));

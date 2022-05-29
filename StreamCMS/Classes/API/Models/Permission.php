@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace StreamCMS\API\Models;
+namespace StreamCMS\Core\API\Models;
 
 use Doctrine\ORM\Mapping as ORM;
 

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace StreamCMS\User\API\Views\Tokens;
 
-use StreamCMS\API\Views\Tokens\AbstractTokenView;
+use StreamCMS\Core\API\Views\Tokens\AbstractTokenView;
 
 class RefreshTokenView extends AbstractTokenView
 {

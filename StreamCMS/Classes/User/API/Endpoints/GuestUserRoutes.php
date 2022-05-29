@@ -5,9 +5,8 @@ declare(strict_types=1);
 namespace StreamCMS\User\API\Endpoints;
 
 use League\Route\RouteGroup;
-use StreamCMS\API\Abstractions\Routes\AbstractRoutes;
-use StreamCMS\User\API\Endpoints\Authentication\CreateRefreshToken;
-use StreamCMS\User\API\Endpoints\Register;
+use StreamCMS\Core\API\Abstractions\Routes\AbstractRoutes;
+use StreamCMS\User\API\Endpoints\Authentication;
 
 final class GuestUserRoutes extends AbstractRoutes
 {
@@ -19,11 +18,17 @@ final class GuestUserRoutes extends AbstractRoutes
     public function defineRoutes(): void
     {
         $this->router->group(
-            '/account',
+            '/token/refresh',
             static function(RouteGroup $group): void
             {
-                $group->map(...CreateRefreshToken::getMap());
-                $group->map(...Register\Twitch::getMap());
+                $group->map(...Authentication\CreateRefreshTokenTwitch::getMap());
+            },
+        );
+        $this->router->group(
+            '/token/access',
+            static function(RouteGroup $group): void
+            {
+                $group->map(...Authentication\CreateAccessToken::getMap());
             },
         );
     }

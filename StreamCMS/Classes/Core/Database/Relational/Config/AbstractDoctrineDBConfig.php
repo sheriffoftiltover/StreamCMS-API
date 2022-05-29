@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace StreamCMS\Core\Database\Relational\Config;
 
 use StreamCMS\Core\Database\KeyValue\Config\AbstractRedisConfig;
-use StreamCMS\Utility\Classes\ClassUtils;
+use StreamCMS\Core\Utility\Classes\ClassUtils;
 
 abstract class AbstractDoctrineDBConfig extends AbstractDBConfig
 {

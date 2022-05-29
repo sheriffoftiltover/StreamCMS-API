@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <skipper version="3.2.35.1768" mvc="Without MVC" orm="Doctrine2">
-  <module name="\API" local-name="API" namespace="\StreamCMS\API\Models" local-namespace="\StreamCMS\API\Models" export-format="Doctrine2Php" export-path="../Classes/API/Models" uuid="a66745bf-3d92-4b77-9f29-b187b03f0982">
-    <entity name="\StreamCMS\API\Models\Permission" local-name="Permission" namespace="\StreamCMS\API\Models" uuid="b55b50ea-b2f2-4006-827f-2bafd94038cd">
+  <module name="\API" local-name="API" namespace="\StreamCMS\Core\API\Models" local-namespace="\StreamCMS\Core\API\Models" export-format="Doctrine2Php" export-path="../Classes/API/Models" uuid="a66745bf-3d92-4b77-9f29-b187b03f0982">
+    <entity name="\StreamCMS\Core\API\Models\Permission" local-name="Permission" namespace="\StreamCMS\Core\API\Models" uuid="b55b50ea-b2f2-4006-827f-2bafd94038cd">
       <field name="id" type="integer" required="true" unique="true" primary="true" auto-increment="true" uuid="1a1e5273-7bc4-4e9c-ab11-34ea133871cf"/>
       <field name="path" type="string" required="true" uuid="4f3ff61d-decb-4164-8f0c-85dc931592af"/>
       <field name="method" type="string" size="7" required="true" uuid="3c0715d8-1051-4a45-a883-3f98d2ae04a0"/>

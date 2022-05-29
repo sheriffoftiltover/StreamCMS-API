@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace StreamCMS\API\Routes;
 
-use StreamCMS\API\Abstractions\Router\StreamCMSRouter;
+use StreamCMS\Core\API\Abstractions\Router\StreamCMSRouter;
 use StreamCMS\User\API\Endpoints\GuestUserRoutes;
 use StreamCMS\User\API\Endpoints\UserRoutes;
 

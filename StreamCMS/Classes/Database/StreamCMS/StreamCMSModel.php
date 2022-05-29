@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace StreamCMS\Database\StreamCMS;
 
 use StreamCMS\Core\Database\Relational\AbstractDoctrineDatabase;
-use StreamCMS\Utility\Models\AbstractDoctrineModel;
+use StreamCMS\Core\Models\AbstractDoctrineModel;
 
 abstract class StreamCMSModel extends AbstractDoctrineModel
 {
