@@ -2,3 +2,4 @@
 /StreamCMS/Scripts/Deployment/StreamCMSCLI/node_modules
 /LEGACY/vendor/
 .env
+/Code/StreamCMS/vendor/

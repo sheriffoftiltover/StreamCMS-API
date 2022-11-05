@@ -4,7 +4,9 @@
     <content url="file://$MODULE_DIR$">
       <sourceFolder url="file://$MODULE_DIR$/spec" isTestSource="true" />
       <sourceFolder url="file://$MODULE_DIR$/LEGACY/tests" isTestSource="true" />
-      <sourceFolder url="file://$MODULE_DIR$/StreamCMS/Classes" isTestSource="false" packagePrefix="StreamCMS\" generated="true" />
+      <sourceFolder url="file://$MODULE_DIR$/StreamCMS/Classes" isTestSource="false" packagePrefix="StreamCMS\Framework" generated="true" />
+      <sourceFolder url="file://$MODULE_DIR$/StreamCMS/FeatureFramework" isTestSource="false" packagePrefix="StreamCMS\FeatureFramework" generated="true" />
+      <sourceFolder url="file://$MODULE_DIR$/StreamCMS/Framework" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/LEGACY" />
       <excludeFolder url="file://$MODULE_DIR$/LEGACY/vendor" />
       <excludeFolder url="file://$MODULE_DIR$/StreamCMS/vendor/composer" />
